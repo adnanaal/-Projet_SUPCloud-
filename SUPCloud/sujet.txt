@@ -1,0 +1,140 @@
+1 - Contexte du projet
+La société SUPCloud a finalisé la conception d'une infrastructure de stockage de fichiers hautement disponible et résiliente, répartie sur plusieurs datacenters. Votre mission, en tant qu'expert en développement, est de concevoir et de développer l'application web qui exploitera cette infrastructure. Vous êtes en charge de la création du "cerveau" et de l'interface de SUPCloud : une plateforme web complète et intuitive permettant aux utilisateurs de stocker, gérer et partager leurs fichiers en toute sécurité.
+
+L'application devra être conçue pour être scalable, robuste et sécurisée, en suivant les meilleures pratiques de développement logiciel.
+
+2 - Description du projet
+2.1 - Généralités
+Le but est de créer une application web de type "cloud storage" (similaire à Dropbox, Google Drive, etc.). Chaque utilisateur disposera d'un compte personnel avec un quota de stockage défini (30 Go pour ce projet). L'application doit permettre une gestion complète des fichiers et des dossiers via une interface web réactive et moderne.
+
+L'architecture de votre solution sera primordiale et devra respecter une séparation claire des responsabilités.
+
+2.2 - Fonctionnalités
+2.2.1 - Gestion des utilisateurs et authentification
+Un utilisateur pourra s'inscrire, se connecter et se déconnecter. Les mots de passe devront être stockés de manière sécurisée (hachage).
+
+La connexion via un service tiers OAuth2 (Google, Microsoft, GitHub, etc.) est requise.
+
+Chaque utilisateur dispose d'un quota de stockage de 30 Go. L'interface devra afficher l'espace utilisé et l'espace restant.
+
+Une page de "Paramètres" permettra à l'utilisateur de modifier son mot de passe ou de gérer ses connexions OAuth2.
+
+2.2.2 - Gestion des fichiers et des dossiers
+L'interface principale affichera une arborescence de fichiers et de dossiers. L'utilisateur devra pouvoir :
+
+Créer un nouveau dossier.
+
+Uploader un ou plusieurs fichiers (avec une barre de progression).
+
+Télécharger un fichier.
+
+Renommer un fichier ou un dossier.
+
+Déplacer un fichier ou un dossier (via glisser-déposer serait un plus).
+
+Supprimer un fichier ou un dossier (avec une corbeille et la possibilité de restaurer ou de supprimer définitivement).
+
+Télécharger un dossier complet sous forme d'archive ZIP. Le processus de compression devra être géré côté serveur à la volée.
+
+2.2.3 - Prévisualisation des fichiers
+Pour améliorer l'expérience utilisateur, un clic sur un fichier compatible devra ouvrir une visionneuse directement dans l'application, sans le télécharger. Cela doit fonctionner au minimum pour :
+
+Les images (JPEG, PNG, GIF)
+
+Les vidéos (MP4, WEBM)
+
+Les fichiers texte (TXT, Markdown)
+
+Les PDF
+
+2.3 - Déploiement & Architecture
+2.3.1 - Architecture
+Votre application doit impérativement comporter trois briques distinctes et indépendantes :
+
+Un serveur backend, exposant une API REST en JSON qui implémente toute la logique métier (gestion des utilisateurs, des fichiers, etc.).
+
+Un client web (frontend), développé avec un framework moderne, qui consomme l'API REST. Aucune logique métier ne doit se trouver dans le client.
+
+Une base de données (au choix) pour stocker les métadonnées (utilisateurs, arborescence des fichiers, liens de partage, etc.). Attention, les fichiers eux-mêmes ne doivent pas être stockés en base de données, mais sur un volume de stockage.
+
+2.3.2 - Conteneurisation
+Le projet doit être entièrement conteneurisable. Un fichier docker-compose.yml à la racine du projet est obligatoire et doit permettre de lancer l'ensemble des services (backend, frontend, base de données) avec une seule commande : docker compose up.
+
+Le projet doit inclure les Dockerfile nécessaires pour chaque service.
+
+Les données de la base de données et les fichiers uploadés par les utilisateurs devront persister après un redémarrage des conteneurs (volumes Docker).
+
+Une conteneurisation non-fonctionnelle, partielle ou absente entrainera un ajournement.
+
+3 - Rendu
+Le rendu se fera sous la forme d'une archive ZIP contenant :
+
+Le code source complet du projet (frontend, backend).
+
+Les fichiers de configuration (Dockerfile, docker-compose.yml, etc.).
+
+Une documentation technique et un manuel utilisateur.
+
+Un lien vers un dépôt Git contenant l'historique complet du projet est obligatoire. Un historique de commits insuffisant ou non représentatif du travail effectué sera sanctionné.
+
+La documentation technique contiendra au minimum :
+
+Les justifications des choix technologiques (langages, frameworks, base de données).
+
+Un guide de déploiement expliquant comment lancer l'application.
+
+Le schéma de la base de données.
+
+Une description de l'architecture de l'API (principaux endpoints).
+
+Le manuel utilisateur expliquera comment utiliser l'application et ses fonctionnalités.
+
+Aucun secret (mot de passe, clé d'API, etc.) ne doit être présent en clair dans le code ou les commits. 
+
+4 - Barème (300 points)
+Documentations (50 points) (Une note < 30 sur cette partie est éliminatoire)
+
+Documentation technique : 30 points
+
+Manuel utilisateur : 20 point
+
+Qualité de l'interface et de l'expérience utilisateur (UI/UX) (30 points)
+
+Clarté de l'interface : 15 points
+
+Ergonomie et fluidité de la navigation : 15 points
+
+Déploiement et Architecture (50 points) (Une note < 40 sur cette partie est éliminatoire)
+
+Respect de l'architecture 3-tiers et séparation des responsabilités : 30 points
+
+Qualité de la conteneurisation (Dockerfiles, docker-compose) : 20 points
+
+Fonctionnalités (170 points) (Une note < 120 sur cette partie est éliminatoire)
+
+Gestion des utilisateurs (inscription/connexion standard) : 20 points
+
+Connexion via OAuth2 : 20 points
+
+Gestion des fichiers (upload, rename, delete, move) : 50 points
+
+Gestion des dossiers (create, rename, delete, move) : 30 points
+
+Téléchargement d'un fichier et d'un dossier (ZIP) : 20 points
+
+Prévisualisation des fichiers : 30 point
+
+Bonus (jusqu'à 50 points)
+
+Qualité professionnelle de l'application (UI/UX, performances, etc.).
+
+Fonctionnalités avancées implémentées (partage avec options, corbeille, glisser-déposer...).
+
+Application déployée en production et accessible publiquement.
+
+Malus (jusqu'à l'ajournement)
+
+Secret(s) en clair dans le code : Jusqu'à l'ajournement selon la criticité.
+
+Failles de sécurité critiques (ex: mots de passe en clair en BDD, injection SQL, secrets sur le dépôt Git, etc.) : Ajournement du projet.
+
