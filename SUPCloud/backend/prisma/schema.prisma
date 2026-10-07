@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  avatar        String?
+  googleId      String?   @unique
+  githubId      String?   @unique
+  storageUsed   BigInt    @default(0)
+  storageLimit  BigInt    @default(32212254720) // 30 Go en octets
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  files         File[]
+  folders       Folder[]
+  trashItems    TrashItem[]
+
+  @@map("users")
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderHierarchy")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  files     File[]
+
+  @@map("folders")
+}
+
+model File {
+  id          String   @id @default(uuid())
+  name        String
+  size        BigInt
+  mimeType    String
+  path        String
+  folderId    String?
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("files")
+}
+
+model TrashItem {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // 'file' ou 'folder'
+  originalId String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("trash_items")
+}
