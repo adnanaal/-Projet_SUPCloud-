@@ -21,10 +21,10 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
   - Setup variables d'environnement (.env.example)
 
 - **Jour 5-7** :
-  - Configuration Docker (Dockerfiles pour backend et frontend)
-  - docker-compose.yml (backend, frontend, PostgreSQL, volumes)
-  - Test de conteneurisation
-  - **Milestone** : Infrastructure prête et conteneurisation fonctionnelle
+  - Configuration locale PostgreSQL
+  - Test de connexion à la base de données
+  - Migration Prisma initiale
+  - **Milestone** : Infrastructure locale prête
 
 ---
 
@@ -150,8 +150,8 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 
 - **Jour 3-4** :
   - Tests frontend (comportements utilisateurs)
-  - Tests Docker (redémarrage, persistance données)
   - Tests OAuth2
+  - Tests de charge
 
 - **Jour 5-7** :
   - Optimisation UI/UX (fluidité, chargement)
@@ -182,8 +182,29 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
   - Review complète du code
   - Nettoyage Git (commits propres)
   - Préparation archive ZIP
-  - Test final docker-compose up
   - **Milestone** : Documentation complète (50 pts - éliminatoire si < 30)
+
+---
+
+## Semaine 9 : Conteneurisation Docker
+
+**Objectifs** : Dockerisation complète du projet
+
+- **Jour 1-2** :
+  - Création Dockerfile pour le backend
+  - Création Dockerfile pour le frontend
+  - Configuration docker-compose.yml (backend, frontend, PostgreSQL, volumes)
+
+- **Jour 3-4** :
+  - Test de conteneurisation locale
+  - Vérification persistance des données
+  - Test des volumes Docker
+
+- **Jour 5-7** :
+  - Optimisation des images Docker
+  - Documentation de déploiement Docker
+  - Test final docker-compose up
+  - **Milestone** : Conteneurisation fonctionnelle (éliminatoire si < 40/50)
 
 ---
 
@@ -191,7 +212,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 
 | Semaine | Objectifs | Points Cibles |
 |---------|-----------|---------------|
-| 1 | Setup & Architecture | Infrastructure prête |
+| 1 | Setup & Architecture locale | Infrastructure prête |
 | 2 | Authentification | 20/20 pts (Auth) |
 | 3 | API Backend | Base fonctionnelle |
 | 4 | Frontend UI | UI/UX en cours |
@@ -199,6 +220,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 | 6 | Prévisualisation | 30/30 pts |
 | 7 | Tests & Sécurité | Architecture validée |
 | 8 | Documentation | 50/50 pts (éliminatoire) |
+| 9 | Conteneurisation Docker | 50/50 pts (éliminatoire) |
 
 **Total cible** : 300/300 points (avec bonus possibles)
 
@@ -207,7 +229,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 ## Priorités Éliminatoires
 
 1. **Documentation (≥ 30/50)** - Semaine 8
-2. **Architecture/Docker (≥ 40/50)** - Semaine 1 + 7
+2. **Architecture/Docker (≥ 40/50)** - Semaine 9
 3. **Fonctionnalités (≥ 120/170)** - Semaines 2-6
 
 ---
@@ -216,9 +238,10 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 
 - **OAuth2 complexité** : Prioriser Google + GitHub, tests précoces
 - **Compression ZIP serveur** : Bibliothèque Archiver, tests charge
-- **Persistance Docker** : Volumes configurés dès Semaine 1
+- **Persistance Docker** : Volumes configurés en Semaine 9
 - **Git commits insuffisants** : Commits quotidiens, messages clairs
 - **Secrets en clair** : .env.example + validation Semaine 7
+- **PostgreSQL local** : Installation et configuration locale en Semaine 1
 
 ---
 
