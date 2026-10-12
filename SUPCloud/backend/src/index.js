@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const passport = require('./config/passport');
 const authMiddleware = require('./middleware/auth');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,9 @@ app.use(passport.initialize());
 app.get('/', (req, res) => {
   res.json({ message: 'SUPCloud API - Bienvenue' });
 });
+
+// Routes d'authentification
+app.use('/api/auth', authRoutes);
 
 // Route de test pour l'authentification
 app.get('/api/protected', authMiddleware, (req, res) => {
