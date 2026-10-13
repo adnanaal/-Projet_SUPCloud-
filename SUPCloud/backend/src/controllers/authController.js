@@ -3,18 +3,37 @@ const { generateToken } = require('../config/jwt');
 const prisma = require('../config/database');
 
 /**
+ * Classe d'erreur personnalisée pour les erreurs d'application
+ */
+class AppError extends Error {
+  constructor(statusCode, message, name = 'AppError') {
+    super(message);
+    this.statusCode = statusCode;
+    this.name = name;
+  }
+}
+
+/**
  * Inscription d'un nouvel utilisateur
  */
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { email, password, name } = req.body;
 
     // Validation basique
     if (!email || !password || !name) {
-      return res.status(400).json({
-        error: 'Données manquantes',
-        message: 'Email, mot de passe et nom sont requis',
-      });
+      throw new AppError(400, 'Email, mot de passe et nom sont requis', 'ValidationError');
+    }
+
+    // Validation de l'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError(400, 'Format d\'email invalide', 'ValidationError');
+    }
+
+    // Validation du mot de passe
+    if (password.length < 6) {
+      throw new AppError(400, 'Le mot de passe doit contenir au moins 6 caractères', 'ValidationError');
     }
 
     // Vérifier si l'utilisateur existe déjà
@@ -23,10 +42,7 @@ const register = async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(409).json({
-        error: 'Utilisateur existe déjà',
-        message: 'Un utilisateur avec cet email existe déjà',
-      });
+      throw new AppError(409, 'Un utilisateur avec cet email existe déjà', 'ConflictError');
     }
 
     // Hacher le mot de passe
@@ -57,27 +73,20 @@ const register = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('Erreur lors de l\'inscription:', error);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      message: 'Une erreur est survenue lors de l\'inscription',
-    });
+    next(error);
   }
 };
 
 /**
  * Connexion d'un utilisateur
  */
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     // Validation basique
     if (!email || !password) {
-      return res.status(400).json({
-        error: 'Données manquantes',
-        message: 'Email et mot de passe sont requis',
-      });
+      throw new AppError(400, 'Email et mot de passe sont requis', 'ValidationError');
     }
 
     // Vérifier si l'utilisateur existe
@@ -86,28 +95,19 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({
-        error: 'Authentification échouée',
-        message: 'Email ou mot de passe incorrect',
-      });
+      throw new AppError(401, 'Email ou mot de passe incorrect', 'AuthenticationError');
     }
 
     // Vérifier si l'utilisateur a un mot de passe (pas OAuth2)
     if (!user.password) {
-      return res.status(401).json({
-        error: 'Authentification échouée',
-        message: 'Ce compte utilise OAuth2. Veuillez vous connecter via Google ou GitHub.',
-      });
+      throw new AppError(401, 'Ce compte utilise OAuth2. Veuillez vous connecter via Google ou GitHub.', 'AuthenticationError');
     }
 
     // Vérifier le mot de passe
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
-        error: 'Authentification échouée',
-        message: 'Email ou mot de passe incorrect',
-      });
+      throw new AppError(401, 'Email ou mot de passe incorrect', 'AuthenticationError');
     }
 
     // Générer le token JWT
@@ -126,11 +126,7 @@ const login = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      message: 'Une erreur est survenue lors de la connexion',
-    });
+    next(error);
   }
 };
 
@@ -148,7 +144,7 @@ const logout = (req, res) => {
 /**
  * Obtenir les informations de l'utilisateur connecté
  */
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
@@ -165,21 +161,14 @@ const getMe = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        error: 'Utilisateur non trouvé',
-        message: 'Utilisateur introuvable',
-      });
+      throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
     res.status(200).json({
       user,
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-    res.status(500).json({
-      error: 'Erreur serveur',
-      message: 'Une erreur est survenue lors de la récupération des informations',
-    });
+    next(error);
   }
 };
 

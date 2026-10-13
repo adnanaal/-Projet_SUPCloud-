@@ -4,6 +4,8 @@ const cors = require('cors');
 const passport = require('./config/passport');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
+const notFound = require('./middleware/notFound');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +44,12 @@ app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] 
 app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/login' }), (req, res) => {
   res.json({ message: 'Authentification GitHub réussie' });
 });
+
+// Middleware pour les routes non trouvées (404)
+app.use(notFound);
+
+// Middleware de gestion d'erreurs global
+app.use(errorHandler);
 
 // Démarrage du serveur
 app.listen(PORT, () => {
