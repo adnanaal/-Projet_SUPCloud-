@@ -23,6 +23,14 @@ app.get('/', (req, res) => {
   res.json({ message: 'SUPCloud API - Bienvenue' });
 });
 
+// Route de fallback pour OAuth2 failureRedirect
+app.get('/login', (req, res) => {
+  res.status(401).json({
+    error: 'Authentification échouée',
+    message: 'La connexion via OAuth2 a échoué',
+  });
+});
+
 // Routes d'authentification
 app.use('/api/auth', authRoutes);
 
@@ -34,15 +42,35 @@ app.get('/api/protected', authMiddleware, (req, res) => {
   });
 });
 
-// Routes OAuth2 (seront implémentées plus tard)
+// Routes OAuth2
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
-  res.json({ message: 'Authentification Google réussie' });
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), (req, res) => {
+  // req.user contient { user, token } retourné par Passport
+  const { user, token } = req.user;
+
+  // Retourner l'utilisateur sans le mot de passe
+  const { password: _, ...userWithoutPassword } = user;
+
+  res.json({
+    message: 'Authentification Google réussie',
+    user: userWithoutPassword,
+    token,
+  });
 });
 
 app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
-app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/login' }), (req, res) => {
-  res.json({ message: 'Authentification GitHub réussie' });
+app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/login', session: false }), (req, res) => {
+  // req.user contient { user, token } retourné par Passport
+  const { user, token } = req.user;
+
+  // Retourner l'utilisateur sans le mot de passe
+  const { password: _, ...userWithoutPassword } = user;
+
+  res.json({
+    message: 'Authentification GitHub réussie',
+    user: userWithoutPassword,
+    token,
+  });
 });
 
 // Middleware pour les routes non trouvées (404)
