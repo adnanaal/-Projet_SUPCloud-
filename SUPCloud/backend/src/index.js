@@ -51,11 +51,9 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
   // Retourner l'utilisateur sans le mot de passe
   const { password: _, ...userWithoutPassword } = user;
 
-  res.json({
-    message: 'Authentification Google réussie',
-    user: userWithoutPassword,
-    token,
-  });
+  // Rediriger vers le frontend avec les données
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
 });
 
 app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
@@ -66,11 +64,9 @@ app.get('/auth/github/callback', passport.authenticate('github', { failureRedire
   // Retourner l'utilisateur sans le mot de passe
   const { password: _, ...userWithoutPassword } = user;
 
-  res.json({
-    message: 'Authentification GitHub réussie',
-    user: userWithoutPassword,
-    token,
-  });
+  // Rediriger vers le frontend avec les données
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
 });
 
 // Middleware pour les routes non trouvées (404)
