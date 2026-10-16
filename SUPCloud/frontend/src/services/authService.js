@@ -34,18 +34,6 @@ export const logout = async () => {
 };
 
 /**
- * Obtenir les informations de l'utilisateur connecté
- */
-export const getMe = async (token) => {
-  const response = await axios.get(`${API_URL}/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
-};
-
-/**
  * Connexion avec Google OAuth2
  */
 export const loginWithGoogle = () => {

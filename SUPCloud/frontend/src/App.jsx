@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import OAuthCallback from './pages/OAuthCallback';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/" element={<LoginPage />} />
       </Routes>
     </Router>
