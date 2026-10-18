@@ -44,3 +44,15 @@ export const changePassword = async (token, currentPassword, newPassword) => {
   );
   return response.data;
 };
+
+/**
+ * Déconnecter un compte OAuth2
+ */
+export const disconnectOAuth = async (token, provider) => {
+  const response = await axios.delete(`${API_URL}/me/oauth/${provider}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

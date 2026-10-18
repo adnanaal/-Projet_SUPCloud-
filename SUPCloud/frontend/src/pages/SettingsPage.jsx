@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../store/authSlice';
-import { getMe, updateProfile, changePassword } from '../services/userService';
+import { getMe, updateProfile, changePassword, disconnectOAuth } from '../services/userService';
 
 const SettingsPage = () => {
   const dispatch = useDispatch();
@@ -72,6 +72,28 @@ const SettingsPage = () => {
       });
     } catch (err) {
       setPasswordError(err.response?.data?.message || 'Erreur lors du changement de mot de passe');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisconnectOAuth = async (provider) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir déconnecter votre compte ${provider === 'google' ? 'Google' : 'GitHub'} ?`)) {
+      return;
+    }
+
+    setLoading(true);
+    setProfileError('');
+    setProfileSuccess('');
+
+    try {
+      await disconnectOAuth(token, provider);
+      setProfileSuccess(`Connexion ${provider === 'google' ? 'Google' : 'GitHub'} déconnectée avec succès`);
+      // Recharger les données utilisateur
+      const userData = await getMe(token);
+      dispatch(updateUser(userData.user));
+    } catch (err) {
+      setProfileError(err.response?.data?.message || 'Erreur lors de la déconnexion OAuth2');
     } finally {
       setLoading(false);
     }
@@ -296,9 +318,20 @@ const SettingsPage = () => {
                   </svg>
                   <span className="font-medium text-gray-800">Google</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm ${user?.googleId ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {user?.googleId ? 'Connecté' : 'Non connecté'}
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className={`px-3 py-1 rounded-full text-sm ${user?.googleId ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {user?.googleId ? 'Connecté' : 'Non connecté'}
+                  </span>
+                  {user?.googleId && user?.password && (
+                    <button
+                      onClick={() => handleDisconnectOAuth('google')}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Déconnecter
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
@@ -308,9 +341,20 @@ const SettingsPage = () => {
                   </svg>
                   <span className="font-medium text-gray-800">GitHub</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm ${user?.githubId ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {user?.githubId ? 'Connecté' : 'Non connecté'}
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className={`px-3 py-1 rounded-full text-sm ${user?.githubId ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {user?.githubId ? 'Connecté' : 'Non connecté'}
+                  </span>
+                  {user?.githubId && user?.password && (
+                    <button
+                      onClick={() => handleDisconnectOAuth('github')}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Déconnecter
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
