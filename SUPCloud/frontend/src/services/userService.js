@@ -25,3 +25,22 @@ export const updateProfile = async (token, data) => {
   });
   return response.data;
 };
+
+/**
+ * Changer le mot de passe
+ */
+export const changePassword = async (token, currentPassword, newPassword) => {
+  const response = await axios.put(
+    `${API_URL}/me/password`,
+    {
+      currentPassword,
+      newPassword,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
