@@ -5,6 +5,7 @@ const passport = require('./config/passport');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const folderRoutes = require('./routes/folderRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -38,13 +39,8 @@ app.use('/api/auth', authRoutes);
 // Routes utilisateur
 app.use('/api/users', userRoutes);
 
-// Route de test pour l'authentification
-app.get('/api/protected', authMiddleware, (req, res) => {
-  res.json({
-    message: 'Accès autorisé',
-    user: req.user,
-  });
-});
+// Routes dossiers
+app.use('/api/folders', folderRoutes);
 
 // Routes OAuth2
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -61,6 +57,14 @@ app.get('/auth/github/callback', passport.authenticate('github', { failureRedire
   const { password: _, ...userWithoutPassword } = user;
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
+});
+
+// Route de test pour l'authentification
+app.get('/api/protected', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Accès autorisé',
+    user: req.user,
+  });
 });
 
 // Middleware pour les routes non trouvées (404)
