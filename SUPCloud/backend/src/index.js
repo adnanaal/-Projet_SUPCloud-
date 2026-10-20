@@ -6,6 +6,7 @@ const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const folderRoutes = require('./routes/folderRoutes');
+const fileRoutes = require('./routes/fileRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -41,6 +42,9 @@ app.use('/api/users', userRoutes);
 
 // Routes dossiers
 app.use('/api/folders', folderRoutes);
+
+// Routes fichiers
+app.use('/api/files', fileRoutes);
 
 // Routes OAuth2
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
