@@ -5,6 +5,35 @@
 const errorHandler = (err, req, res, next) => {
   console.error('Erreur:', err);
 
+  // Erreurs Multer (upload)
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({
+      error: 'Fichier trop volumineux',
+      message: 'La taille du fichier dépasse la limite autorisée',
+    });
+  }
+
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(413).json({
+      error: 'Trop de fichiers',
+      message: 'Le nombre de fichiers dépasse la limite autorisée',
+    });
+  }
+
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({
+      error: 'Fichier inattendu',
+      message: 'Le champ de fichier est manquant',
+    });
+  }
+
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      error: 'Erreur lors de l\'upload',
+      message: err.message,
+    });
+  }
+
   // Erreurs Prisma
   if (err.code === 'P2002') {
     return res.status(409).json({

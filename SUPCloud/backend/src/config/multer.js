@@ -13,32 +13,54 @@ const storage = multer.diskStorage({
   },
 });
 
-// Filtre pour accepter uniquement certains types de fichiers
-const fileFilter = (req, file, cb) => {
-  // Types de fichiers acceptés
-  const allowedMimeTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'video/mp4',
-    'video/webm',
-    'application/pdf',
-    'text/plain',
-    'text/markdown',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ];
+// Types de fichiers acceptés avec leurs extensions correspondantes
+const allowedFileTypes = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/gif': ['.gif'],
+  'image/webp': ['.webp'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
+  'application/pdf': ['.pdf'],
+  'text/plain': ['.txt'],
+  'text/markdown': ['.md'],
+  'application/msword': ['.doc'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.ms-excel': ['.xls'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+  'application/vnd.ms-powerpoint': ['.ppt'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+};
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Type de fichier non supporté'), false);
+// Limite de taille maximale (100 Mo)
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+// Filtre pour valider le type et la taille du fichier
+const fileFilter = (req, file, cb) => {
+  // Vérifier si un fichier est fourni
+  if (!file) {
+    return cb(new Error('Aucun fichier fourni'), false);
   }
+
+  // Vérifier la taille du fichier
+  if (file.size > MAX_FILE_SIZE) {
+    return cb(new Error(`La taille du fichier dépasse la limite de ${MAX_FILE_SIZE / (1024 * 1024)} Mo`), false);
+  }
+
+  // Vérifier le type MIME
+  if (!allowedFileTypes[file.mimetype]) {
+    return cb(new Error('Type de fichier non supporté. Types acceptés : images (JPEG, PNG, GIF, WEBP), vidéos (MP4, WEBM), PDF, texte, documents Office'), false);
+  }
+
+  // Vérifier l'extension du fichier correspond au type MIME
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = allowedFileTypes[file.mimetype];
+  
+  if (!allowedExtensions.includes(ext)) {
+    return cb(new Error(`L'extension du fichier ne correspond pas au type MIME. Extension attendue : ${allowedExtensions.join(', ')}`), false);
+  }
+
+  cb(null, true);
 };
 
 // Configuration Multer
@@ -46,7 +68,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100 Mo par fichier
+    fileSize: MAX_FILE_SIZE,
   },
 });
 

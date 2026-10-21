@@ -1,6 +1,9 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 
+const prisma = require('../config/database');
+const AppError = require('../utils/AppError');
+
 /**
  * Uploader un fichier
  */
@@ -27,6 +30,21 @@ const uploadFile = async (req, res, next) => {
       if (folder.userId !== req.user.id) {
         throw new AppError(403, 'Accès refusé au dossier', 'ForbiddenError');
       }
+    }
+
+    // Récupérer l'utilisateur actuel pour vérifier le quota
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
+    }
+
+    // Vérifier le quota (cette validation sera améliorée dans la Partie 3)
+    const newStorageUsed = BigInt(user.storageUsed) + BigInt(file.size);
+    if (newStorageUsed > user.storageLimit) {
+      throw new AppError(413, 'Quota de stockage dépassé', 'QuotaExceededError');
     }
 
     // Créer le fichier dans la base de données
