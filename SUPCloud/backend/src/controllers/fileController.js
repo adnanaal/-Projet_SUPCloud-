@@ -5,6 +5,17 @@ const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 
 /**
+ * Formater les octets en unités lisibles
+ */
+const formatBytes = (bytes) => {
+  if (bytes === 0n) return '0 Bytes';
+  const k = 1024n;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = BigInt(Math.floor(Math.log(Number(bytes)) / Math.log(1024)));
+  return `${(bytes / BigInt(Math.pow(1024, Number(i)))).toString()} ${sizes[i]}`;
+};
+
+/**
  * Uploader un fichier
  */
 const uploadFile = async (req, res, next) => {
@@ -41,17 +52,29 @@ const uploadFile = async (req, res, next) => {
       throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
-    // Vérifier le quota (cette validation sera améliorée dans la Partie 3)
-    const newStorageUsed = BigInt(user.storageUsed) + BigInt(file.size);
+    // Vérifier le quota
+    const fileSize = BigInt(file.size);
+    const newStorageUsed = user.storageUsed + fileSize;
+    const storageRemaining = user.storageLimit - user.storageUsed;
+
     if (newStorageUsed > user.storageLimit) {
-      throw new AppError(413, 'Quota de stockage dépassé', 'QuotaExceededError');
+      const usedGB = Number(user.storageUsed) / (1024 * 1024 * 1024);
+      const limitGB = Number(user.storageLimit) / (1024 * 1024 * 1024);
+      const fileMB = file.size / (1024 * 1024);
+      const remainingMB = Number(storageRemaining) / (1024 * 1024);
+
+      throw new AppError(
+        413,
+        `Quota de stockage dépassé. Espace utilisé : ${usedGB.toFixed(2)} Go / ${limitGB.toFixed(2)} Go. Espace restant : ${remainingMB.toFixed(2)} Mo. Taille du fichier : ${fileMB.toFixed(2)} Mo.`,
+        'QuotaExceededError'
+      );
     }
 
     // Créer le fichier dans la base de données
     const uploadedFile = await prisma.file.create({
       data: {
         name: file.originalname,
-        size: BigInt(file.size),
+        size: fileSize,
         mimeType: file.mimetype,
         path: file.path,
         folderId: folderId || null,
@@ -64,7 +87,7 @@ const uploadFile = async (req, res, next) => {
       where: { id: req.user.id },
       data: {
         storageUsed: {
-          increment: BigInt(file.size),
+          increment: fileSize,
         },
       },
     });
@@ -158,9 +181,63 @@ const downloadFile = async (req, res, next) => {
   }
 };
 
+/**
+ * Supprimer un fichier
+ */
+const deleteFile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Récupérer le fichier avant suppression
+    const file = await prisma.file.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new AppError(404, 'Fichier introuvable', 'NotFoundError');
+    }
+
+    // Vérifier que le fichier appartient à l'utilisateur
+    if (file.userId !== req.user.id) {
+      throw new AppError(403, 'Accès refusé', 'ForbiddenError');
+    }
+
+    // Supprimer le fichier de la base de données
+    await prisma.file.delete({
+      where: { id },
+    });
+
+    // Libérer le quota utilisateur
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        storageUsed: {
+          decrement: file.size,
+        },
+      },
+    });
+
+    // Supprimer le fichier physique du disque
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '..', '..', file.path);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.status(200).json({
+      message: 'Fichier supprimé avec succès',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadFile,
   getFile,
   getFiles,
   downloadFile,
+  deleteFile,
 };
