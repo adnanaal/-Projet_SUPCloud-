@@ -1,9 +1,6 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 
-const prisma = require('../config/database');
-const AppError = require('../utils/AppError');
-
 /**
  * Formater les octets en unités lisibles
  */
@@ -277,7 +274,7 @@ const moveFile = async (req, res, next) => {
 };
 
 /**
- * Supprimer un fichier
+ * Mettre un fichier à la corbeille
  */
 const deleteFile = async (req, res, next) => {
   try {
@@ -296,6 +293,20 @@ const deleteFile = async (req, res, next) => {
     if (file.userId !== req.user.id) {
       throw new AppError(403, 'Accès refusé', 'ForbiddenError');
     }
+
+    // Créer un élément dans la corbeille
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // Expiration dans 30 jours
+
+    await prisma.trashItem.create({
+      data: {
+        name: file.name,
+        type: 'file',
+        originalId: file.id,
+        userId: req.user.id,
+        expiresAt,
+      },
+    });
 
     // Supprimer le fichier de la base de données
     await prisma.file.delete({
@@ -322,7 +333,7 @@ const deleteFile = async (req, res, next) => {
     }
 
     res.status(200).json({
-      message: 'Fichier supprimé avec succès',
+      message: 'Fichier mis à la corbeille avec succès',
     });
   } catch (error) {
     next(error);

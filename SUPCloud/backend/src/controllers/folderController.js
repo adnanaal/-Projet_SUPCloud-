@@ -241,7 +241,7 @@ const moveFolder = async (req, res, next) => {
 };
 
 /**
- * Supprimer un dossier
+ * Mettre un dossier à la corbeille
  */
 const deleteFolder = async (req, res, next) => {
   try {
@@ -250,6 +250,9 @@ const deleteFolder = async (req, res, next) => {
     // Vérifier si le dossier existe
     const folder = await prisma.folder.findUnique({
       where: { id },
+      include: {
+        files: true,
+      },
     });
 
     if (!folder) {
@@ -261,13 +264,52 @@ const deleteFolder = async (req, res, next) => {
       throw new AppError(403, 'Accès refusé', 'ForbiddenError');
     }
 
+    // Créer un élément dans la corbeille
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // Expiration dans 30 jours
+
+    await prisma.trashItem.create({
+      data: {
+        name: folder.name,
+        type: 'folder',
+        originalId: folder.id,
+        userId: req.user.id,
+        expiresAt,
+      },
+    });
+
+    // Libérer le quota utilisateur pour tous les fichiers du dossier
+    const totalSize = folder.files.reduce((sum, file) => sum + file.size, 0n);
+    
+    if (totalSize > 0n) {
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: {
+          storageUsed: {
+            decrement: totalSize,
+          },
+        },
+      });
+    }
+
+    // Supprimer les fichiers physiques du disque
+    const fs = require('fs');
+    const path = require('path');
+    
+    for (const file of folder.files) {
+      const filePath = path.join(__dirname, '..', '..', file.path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
     // Supprimer le dossier (Prisma supprimera automatiquement les fichiers grâce à onDelete: Cascade)
     await prisma.folder.delete({
       where: { id },
     });
 
     res.status(200).json({
-      message: 'Dossier supprimé avec succès',
+      message: 'Dossier mis à la corbeille avec succès',
     });
   } catch (error) {
     next(error);
