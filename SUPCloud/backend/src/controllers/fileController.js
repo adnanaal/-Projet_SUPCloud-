@@ -182,6 +182,48 @@ const downloadFile = async (req, res, next) => {
 };
 
 /**
+ * Renommer un fichier
+ */
+const renameFile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    // Validation
+    if (!name) {
+      throw new AppError(400, 'Le nom du fichier est requis', 'ValidationError');
+    }
+
+    // Vérifier si le fichier existe
+    const file = await prisma.file.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new AppError(404, 'Fichier introuvable', 'NotFoundError');
+    }
+
+    // Vérifier que le fichier appartient à l'utilisateur
+    if (file.userId !== req.user.id) {
+      throw new AppError(403, 'Accès refusé', 'ForbiddenError');
+    }
+
+    // Mettre à jour le nom du fichier
+    const updatedFile = await prisma.file.update({
+      where: { id },
+      data: { name },
+    });
+
+    res.status(200).json({
+      message: 'Fichier renommé avec succès',
+      file: updatedFile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Supprimer un fichier
  */
 const deleteFile = async (req, res, next) => {
@@ -239,5 +281,6 @@ module.exports = {
   getFile,
   getFiles,
   downloadFile,
+  renameFile,
   deleteFile,
 };
