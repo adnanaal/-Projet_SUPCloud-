@@ -18,8 +18,8 @@ const LoginPage = () => {
     try {
       const data = await login(email, password);
       dispatch(loginSuccess(data));
-      // Redirection vers les paramètres après connexion
-      window.location.href = '/settings';
+      // Redirection vers la page d'accueil après connexion
+      window.location.href = '/home';
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la connexion');
     } finally {

@@ -17,7 +17,7 @@ const OAuthCallback = () => {
       try {
         const userData = JSON.parse(decodeURIComponent(user));
         dispatch(loginSuccess({ user: userData, token }));
-        navigate('/settings');
+        navigate('/home');
       } catch (error) {
         console.error('Erreur lors du traitement du callback OAuth2:', error);
         navigate('/login');
