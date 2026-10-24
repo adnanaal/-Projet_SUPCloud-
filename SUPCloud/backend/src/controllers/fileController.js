@@ -224,6 +224,59 @@ const renameFile = async (req, res, next) => {
 };
 
 /**
+ * Déplacer un fichier
+ */
+const moveFile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { folderId } = req.body;
+
+    // Vérifier si le fichier existe
+    const file = await prisma.file.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new AppError(404, 'Fichier introuvable', 'NotFoundError');
+    }
+
+    // Vérifier que le fichier appartient à l'utilisateur
+    if (file.userId !== req.user.id) {
+      throw new AppError(403, 'Accès refusé', 'ForbiddenError');
+    }
+
+    // Si folderId est fourni, vérifier que le dossier existe
+    if (folderId) {
+      const folder = await prisma.folder.findUnique({
+        where: { id: folderId },
+      });
+
+      if (!folder) {
+        throw new AppError(404, 'Dossier introuvable', 'NotFoundError');
+      }
+
+      // Vérifier que le dossier appartient à l'utilisateur
+      if (folder.userId !== req.user.id) {
+        throw new AppError(403, 'Accès refusé au dossier', 'ForbiddenError');
+      }
+    }
+
+    // Mettre à jour le dossier du fichier
+    const updatedFile = await prisma.file.update({
+      where: { id },
+      data: { folderId: folderId || null },
+    });
+
+    res.status(200).json({
+      message: 'Fichier déplacé avec succès',
+      file: updatedFile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Supprimer un fichier
  */
 const deleteFile = async (req, res, next) => {
@@ -282,5 +335,6 @@ module.exports = {
   getFiles,
   downloadFile,
   renameFile,
+  moveFile,
   deleteFile,
 };

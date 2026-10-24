@@ -10,6 +10,7 @@ router.get('/', authMiddleware, fileController.getFiles);
 router.get('/:id', authMiddleware, fileController.getFile);
 router.get('/:id/download', authMiddleware, fileController.downloadFile);
 router.put('/:id', authMiddleware, fileController.renameFile);
+router.patch('/:id/move', authMiddleware, fileController.moveFile);
 router.delete('/:id', authMiddleware, fileController.deleteFile);
 
 module.exports = router;
