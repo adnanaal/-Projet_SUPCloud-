@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { loginSuccess } from '../store/authSlice';
 import { login, loginWithGoogle, loginWithGitHub } from '../services/authService';
+import logoImage from '/logo.jpg';
 
 const LoginPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,10 +19,21 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const data = await login(email, password);
-      dispatch(loginSuccess(data));
+      // Simulation pour tester l'interface - accepter n'importe quels identifiants
+      const mockUser = {
+        id: '1',
+        email: email,
+        name: email.split('@')[0] || 'Utilisateur Test',
+        storageUsed: 0,
+        storageLimit: 32212254720, // 30 Go
+        googleId: null,
+        githubId: null,
+      };
+      const mockToken = 'mock-token-for-testing';
+
+      dispatch(loginSuccess({ user: mockUser, token: mockToken }));
       // Redirection vers la page d'accueil après connexion
-      window.location.href = '/home';
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la connexion');
     } finally {
@@ -38,9 +52,21 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          Connexion SUPCloud
-        </h1>
+        <div className="text-center mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="cursor-pointer focus:outline-none"
+          >
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="h-20 mx-auto"
+            />
+          </button>
+          <h1 className="text-3xl font-bold text-gray-800 mt-4">
+            Connexion SUPCloud
+          </h1>
+        </div>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

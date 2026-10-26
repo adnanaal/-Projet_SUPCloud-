@@ -37,24 +37,7 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de l\'inscription');
-      }
-
+      // Simulation pour tester l'interface - accepter n'importe quelle inscription
       // Rediriger vers la page de connexion après inscription réussie
       navigate('/login');
     } catch (err) {
@@ -68,10 +51,17 @@ const RegisterPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
-            <UserPlus className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Créer un compte</h1>
+          <button
+            onClick={() => navigate('/')}
+            className="cursor-pointer focus:outline-none"
+          >
+            <img
+              src="/logo.jpg"
+              alt="Logo"
+              className="h-20 mx-auto"
+            />
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900 mt-4">Créer un compte</h1>
           <p className="text-gray-600 mt-2">Rejoignez SUPCloud</p>
         </div>
 

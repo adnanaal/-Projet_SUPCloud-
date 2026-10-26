@@ -22,12 +22,16 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-full">
           {/* Logo */}
           <div className="flex items-center">
-            <h1
-              className="text-2xl font-bold text-indigo-600 cursor-pointer"
+            <button
               onClick={() => navigate('/home')}
+              className="cursor-pointer focus:outline-none"
             >
-              SUPCloud
-            </h1>
+              <img
+                src="/supcloud.png"
+                alt="SUPCloud"
+                className="h-10"
+              />
+            </button>
           </div>
 
           {/* Barre de recherche */}
