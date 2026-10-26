@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../store/authSlice';
 import { getMe, updateProfile, changePassword, disconnectOAuth } from '../services/userService';
+import MainLayout from '../components/layout/MainLayout';
 
 const SettingsPage = () => {
   const dispatch = useDispatch();
@@ -112,13 +113,15 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Paramètres</h1>
+    <MainLayout>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Paramètres</h1>
+        <p className="text-gray-600">Gérez votre compte et vos préférences</p>
+      </div>
 
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Informations utilisateur */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-4xl space-y-6">
+        {/* Informations utilisateur */}
+        <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Informations utilisateur</h2>
 
             {profileError && (
@@ -185,9 +188,9 @@ const SettingsPage = () => {
             </form>
           </div>
 
-          {/* Changement de mot de passe */}
-          {user?.password && (
-            <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Changement de mot de passe */}
+        {user?.password && (
+          <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Changer le mot de passe</h2>
 
               {passwordError && (
@@ -259,8 +262,8 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {/* Quota de stockage */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Quota de stockage */}
+        <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Quota de stockage</h2>
 
             <div className="space-y-4">
@@ -291,8 +294,8 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Connexions OAuth2 */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Connexions OAuth2 */}
+        <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Connexions OAuth2</h2>
 
             <div className="space-y-4">
@@ -356,11 +359,9 @@ const SettingsPage = () => {
                   )}
                 </div>
               </div>
-            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </MainLayout>
   );
 };
 

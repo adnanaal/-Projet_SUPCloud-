@@ -1,12 +1,32 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  loading: false,
-  error: null,
+// Charger l'état depuis localStorage si disponible
+const loadFromStorage = () => {
+  try {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      return {
+        user: JSON.parse(userStr),
+        token,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      };
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement depuis localStorage:', error);
+  }
+  return {
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+  };
 };
+
+const initialState = loadFromStorage();
 
 const authSlice = createSlice({
   name: 'auth',
@@ -22,6 +42,9 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.error = null;
+      // Sauvegarder dans localStorage
+      localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
     },
     loginFailure: (state, action) => {
       state.loading = false;
@@ -36,9 +59,13 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
+      // Supprimer de localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
+      localStorage.setItem('user', JSON.stringify(state.user));
     },
     clearError: (state) => {
       state.error = null;
