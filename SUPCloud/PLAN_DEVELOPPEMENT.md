@@ -38,7 +38,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
   - Middleware JWT pour routes protégées
 
 - **Jour 3-4** :
-  - OAuth2 avec Google et GitHub (Passport.js)
+  - OAuth2 avec Google, GitHub et Microsoft (Passport.js)
   - Page de connexion frontend avec options OAuth2
   - Gestion des tokens OAuth2
 
@@ -253,7 +253,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 - Base de données: PostgreSQL
 - ORM: Prisma
 - Authentification: JWT + Passport.js
-- OAuth2: Passport avec Google/GitHub strategy
+- OAuth2: Passport avec Google/GitHub/Microsoft strategy
 - Upload: Multer
 - Compression: Archiver (ZIP)
 - Validation: Zod

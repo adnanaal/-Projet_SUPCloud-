@@ -79,7 +79,8 @@ const SettingsPage = () => {
   };
 
   const handleDisconnectOAuth = async (provider) => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir déconnecter votre compte ${provider === 'google' ? 'Google' : 'GitHub'} ?`)) {
+    const providerName = provider === 'google' ? 'Google' : provider === 'github' ? 'GitHub' : 'Microsoft';
+    if (!window.confirm(`Êtes-vous sûr de vouloir déconnecter votre compte ${providerName} ?`)) {
       return;
     }
 
@@ -89,7 +90,7 @@ const SettingsPage = () => {
 
     try {
       await disconnectOAuth(token, provider);
-      setProfileSuccess(`Connexion ${provider === 'google' ? 'Google' : 'GitHub'} déconnectée avec succès`);
+      setProfileSuccess(`Connexion ${providerName} déconnectée avec succès`);
       // Recharger les données utilisateur
       const userData = await getMe(token);
       dispatch(updateUser(userData.user));
@@ -351,6 +352,33 @@ const SettingsPage = () => {
                   {user?.githubId && user?.password && (
                     <button
                       onClick={() => handleDisconnectOAuth('github')}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Déconnecter
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">
+                <div className="flex items-center">
+                  <svg className="w-6 h-6 mr-3" viewBox="0 0 23 23">
+                    <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
+                    <path fill="#f35325" d="M1 1h10v10H1z"/>
+                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                  </svg>
+                  <span className="font-medium text-gray-800">Microsoft</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className={`px-3 py-1 rounded-full text-sm ${user?.microsoftId ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {user?.microsoftId ? 'Connecté' : 'Non connecté'}
+                  </span>
+                  {user?.microsoftId && user?.password && (
+                    <button
+                      onClick={() => handleDisconnectOAuth('microsoft')}
                       disabled={loading}
                       className="text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >

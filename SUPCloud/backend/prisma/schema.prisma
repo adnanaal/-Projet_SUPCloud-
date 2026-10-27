@@ -18,6 +18,7 @@ model User {
   avatar        String?
   googleId      String?   @unique
   githubId      String?   @unique
+  microsoftId   String?   @unique
   storageUsed   BigInt    @default(0)
   storageLimit  BigInt    @default(32212254720) // 30 Go en octets
   createdAt     DateTime  @default(now())

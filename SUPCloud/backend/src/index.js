@@ -67,6 +67,14 @@ app.get('/auth/github/callback', passport.authenticate('github', { failureRedire
   res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
 });
 
+app.get('/auth/microsoft', passport.authenticate('azure_ad_oauth2', { scope: ['openid', 'profile', 'email'] }));
+app.get('/auth/microsoft/callback', passport.authenticate('azure_ad_oauth2', { failureRedirect: '/login', session: false }), (req, res) => {
+  const { user, token } = req.user;
+  const { password: _, ...userWithoutPassword } = user;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
+});
+
 // Route de test pour l'authentification
 app.get('/api/protected', authMiddleware, (req, res) => {
   res.json({

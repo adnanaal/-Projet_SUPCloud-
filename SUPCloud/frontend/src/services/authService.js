@@ -46,3 +46,10 @@ export const loginWithGoogle = () => {
 export const loginWithGitHub = () => {
   window.location.href = '/auth/github';
 };
+
+/**
+ * Connexion avec Microsoft OAuth2
+ */
+export const loginWithMicrosoft = () => {
+  window.location.href = '/auth/microsoft';
+};
