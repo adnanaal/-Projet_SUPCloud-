@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../store/authSlice';
 import { getMe, updateProfile, changePassword, disconnectOAuth } from '../services/userService';
 import MainLayout from '../components/layout/MainLayout';
+import Progress from '../components/ui/Progress';
 
 const SettingsPage = () => {
   const dispatch = useDispatch();
@@ -276,12 +277,7 @@ const SettingsPage = () => {
               </div>
 
               <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className="bg-blue-600 h-4 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${calculatePercentage(user?.storageUsed || 0, user?.storageLimit || 32212254720)}%`,
-                  }}
-                ></div>
+                <Progress value={user?.storageUsed || 0} max={user?.storageLimit || 32212254720} />
               </div>
 
               <div className="flex justify-between items-center text-sm">

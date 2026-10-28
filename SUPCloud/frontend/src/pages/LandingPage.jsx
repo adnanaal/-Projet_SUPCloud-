@@ -10,6 +10,7 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import Button from '../components/ui/Button';
 
 const LandingPage = () => {
   const navigate = useNavigate();
