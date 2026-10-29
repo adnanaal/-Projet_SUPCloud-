@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OAuthCallback from './pages/OAuthCallback';
 import HomePage from './pages/HomePage';
+import RecentsPage from './pages/RecentsPage';
+import FavoritesPage from './pages/FavoritesPage';
 import SettingsPage from './pages/SettingsPage';
 
 const ProtectedRoute = ({ children }) => {
@@ -26,6 +28,22 @@ function App() {
           element={
             <ProtectedRoute>
               <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recents"
+          element={
+            <ProtectedRoute>
+              <RecentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRoute>
+              <FavoritesPage />
             </ProtectedRoute>
           }
         />
