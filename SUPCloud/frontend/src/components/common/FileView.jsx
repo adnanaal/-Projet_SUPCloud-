@@ -1,16 +1,70 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Grid, List, SortAsc } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import FileList from './FileList';
 import Breadcrumbs from './Breadcrumbs';
+import { fileService } from '../../services/fileService';
+import { folderService } from '../../services/folderService';
+import { addToast } from '../../store/uiSlice';
 
 const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs = [] }) => {
+  const dispatch = useDispatch();
   const [viewMode, setViewMode] = React.useState('grid'); // 'grid' or 'list'
+  const [draggedItem, setDraggedItem] = React.useState(null);
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+  const handleDragStart = (item) => {
+    setDraggedItem(item);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setIsDraggingOver(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+
+    if (!draggedItem) return;
+
+    const type = e.dataTransfer.getData('type');
+    const id = e.dataTransfer.getData('id');
+
+    try {
+      if (type === 'file') {
+        await fileService.moveFile(id, currentFolder?.id || null);
+        dispatch(addToast({ message: 'Fichier déplacé avec succès', type: 'success' }));
+      } else if (type === 'folder') {
+        await folderService.moveFolder(id, currentFolder?.id || null);
+        dispatch(addToast({ message: 'Dossier déplacé avec succès', type: 'success' }));
+      }
+    } catch (error) {
+      console.error('Erreur lors du déplacement:', error);
+      dispatch(addToast({ message: 'Erreur lors du déplacement', type: 'error' }));
+    }
+
+    setDraggedItem(null);
+  };
 
   return (
-    <div>
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`transition-colors ${isDraggingOver ? 'bg-indigo-50' : ''}`}
+    >
       {/* Breadcrumbs */}
       <Breadcrumbs items={breadcrumbs} />
 
@@ -53,7 +107,13 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {folders.map((folder) => (
-                <FolderCard key={folder.id} folder={folder} />
+                <FolderCard
+                  key={folder.id}
+                  folder={folder}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  isDragging={draggedItem?.id === folder.id}
+                />
               ))}
             </div>
           ) : (
@@ -71,7 +131,13 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {files.map((file) => (
-                <FileCard key={file.id} file={file} />
+                <FileCard
+                  key={file.id}
+                  file={file}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  isDragging={draggedItem?.id === file.id}
+                />
               ))}
             </div>
           ) : (

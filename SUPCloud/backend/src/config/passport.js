@@ -117,63 +117,65 @@ passport.use(
   )
 );
 
-// Configuration de la stratégie Microsoft Azure AD OAuth2
-passport.use(
-  new AzureADOAuth2Strategy(
-    {
-      clientID: process.env.MICROSOFT_CLIENT_ID,
-      clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-      callbackURL: process.env.MICROSOFT_CALLBACK_URL,
-      resource: '00000003-0000-0000-c000-000000000000', // Microsoft Graph API
-      tenant: process.env.MICROSOFT_TENANT_ID || 'common',
-    },
-    async (accessToken, refreshToken, params, profile, done) => {
-      try {
-        const email = profile.upn || profile.email;
-        const microsoftId = profile.oid;
-        const name = profile.displayName || profile.name;
-        const avatar = null; // Microsoft ne fournit pas d'avatar par défaut
+// Configuration de la stratégie Microsoft Azure AD OAuth2 (uniquement si configuré)
+if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+  passport.use(
+    new AzureADOAuth2Strategy(
+      {
+        clientID: process.env.MICROSOFT_CLIENT_ID,
+        clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+        callbackURL: process.env.MICROSOFT_CALLBACK_URL,
+        resource: '00000003-0000-0000-c000-000000000000', // Microsoft Graph API
+        tenant: process.env.MICROSOFT_TENANT_ID || 'common',
+      },
+      async (accessToken, refreshToken, params, profile, done) => {
+        try {
+          const email = profile.upn || profile.email;
+          const microsoftId = profile.oid;
+          const name = profile.displayName || profile.name;
+          const avatar = null; // Microsoft ne fournit pas d'avatar par défaut
 
-        // Vérifier si l'utilisateur existe déjà avec cet email
-        let user = await prisma.user.findUnique({
-          where: { email },
-        });
+          // Vérifier si l'utilisateur existe déjà avec cet email
+          let user = await prisma.user.findUnique({
+            where: { email },
+          });
 
-        if (user) {
-          // Si l'utilisateur existe mais n'a pas de microsoftId, le mettre à jour
-          if (!user.microsoftId) {
-            user = await prisma.user.update({
-              where: { id: user.id },
-              data: { microsoftId, avatar: avatar || user.avatar },
+          if (user) {
+            // Si l'utilisateur existe mais n'a pas de microsoftId, le mettre à jour
+            if (!user.microsoftId) {
+              user = await prisma.user.update({
+                where: { id: user.id },
+                data: { microsoftId, avatar: avatar || user.avatar },
+              });
+            }
+          } else {
+            // Créer un nouvel utilisateur
+            user = await prisma.user.create({
+              data: {
+                email,
+                microsoftId,
+                name,
+                avatar,
+              },
             });
           }
-        } else {
-          // Créer un nouvel utilisateur
-          user = await prisma.user.create({
-            data: {
-              email,
-              microsoftId,
-              name,
-              avatar,
-            },
+
+          // Générer un token JWT
+          const token = generateToken({
+            id: user.id,
+            email: user.email,
+            name: user.name,
           });
+
+          // Retourner l'utilisateur avec le token
+          return done(null, { user, token });
+        } catch (error) {
+          return done(error, null);
         }
-
-        // Générer un token JWT
-        const token = generateToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        });
-
-        // Retourner l'utilisateur avec le token
-        return done(null, { user, token });
-      } catch (error) {
-        return done(error, null);
       }
-    }
-  )
-);
+    )
+  );
+}
 
 // Sérialisation de l'utilisateur pour la session
 passport.serializeUser((data, done) => {

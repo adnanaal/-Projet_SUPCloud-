@@ -5,7 +5,7 @@ import { File, MoreVertical, Download, Trash2, Edit, Move } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 
-const FileCard = ({ file }) => {
+const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
@@ -30,8 +30,26 @@ const FileCard = ({ file }) => {
     console.log('Move file:', file.id);
   };
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('type', 'file');
+    e.dataTransfer.setData('id', file.id);
+    e.dataTransfer.effectAllowed = 'move';
+    if (onDragStart) onDragStart(file);
+  };
+
+  const handleDragEnd = () => {
+    if (onDragEnd) onDragEnd();
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
+    <div
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      }`}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">

@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Folder, MoreVertical, Edit, Move, Trash2 } from 'lucide-react';
 
-const FolderCard = ({ folder }) => {
+const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
@@ -27,10 +27,26 @@ const FolderCard = ({ folder }) => {
     console.log('Delete folder:', folder.id);
   };
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('type', 'folder');
+    e.dataTransfer.setData('id', folder.id);
+    e.dataTransfer.effectAllowed = 'move';
+    if (onDragStart) onDragStart(folder);
+  };
+
+  const handleDragEnd = () => {
+    if (onDragEnd) onDragEnd();
+  };
+
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group"
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      }`}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">

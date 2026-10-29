@@ -8,8 +8,7 @@ import {
   Archive,
   FileCode,
   FileSpreadsheet,
-  FileJson,
-  FileDefault
+  FileJson
 } from 'lucide-react';
 
 const FileIcon = ({ type, size = 24, className = '' }) => {
