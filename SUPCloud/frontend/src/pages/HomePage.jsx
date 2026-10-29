@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import FileView from '../components/common/FileView';
+import FloatingActionButton from '../components/common/FloatingActionButton';
 import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
@@ -63,6 +64,9 @@ const HomePage = () => {
           breadcrumbs={breadcrumbs}
         />
       )}
+
+      {/* Bouton flottant draggable */}
+      <FloatingActionButton />
     </MainLayout>
   );
 };

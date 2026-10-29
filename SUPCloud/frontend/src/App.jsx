@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OAuthCallback from './pages/OAuthCallback';
 import HomePage from './pages/HomePage';
+import FilesPage from './pages/FilesPage';
 import RecentsPage from './pages/RecentsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import SettingsPage from './pages/SettingsPage';
@@ -28,6 +29,14 @@ function App() {
           element={
             <ProtectedRoute>
               <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/files"
+          element={
+            <ProtectedRoute>
+              <FilesPage />
             </ProtectedRoute>
           }
         />
