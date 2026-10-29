@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import FilesPage from './pages/FilesPage';
 import RecentsPage from './pages/RecentsPage';
 import FavoritesPage from './pages/FavoritesPage';
+import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +54,14 @@ function App() {
           element={
             <ProtectedRoute>
               <FavoritesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

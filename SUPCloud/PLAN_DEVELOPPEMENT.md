@@ -100,7 +100,7 @@ Basé sur l'analyse du sujet et du README, voici un plan structuré en 8 semaine
 **Objectifs** : Upload, téléchargement, suppression, corbeille
 
 - **Jour 1-2** :
-  - Formulaire upload avec barre de progression
+  - Formulaire upload avec barre de progression/tri multiple
   - Upload multiple de fichiers
   - Création de dossiers
 

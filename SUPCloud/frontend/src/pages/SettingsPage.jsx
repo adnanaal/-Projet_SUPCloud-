@@ -1,56 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateUser } from '../store/authSlice';
-import { getMe, updateProfile, changePassword, disconnectOAuth } from '../services/userService';
+import { useNavigate } from 'react-router-dom';
+import { changePassword, disconnectOAuth } from '../services/userService';
 import MainLayout from '../components/layout/MainLayout';
-import Progress from '../components/ui/Progress';
 
 const SettingsPage = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    avatar: '',
-  });
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        avatar: user.avatar || '',
-      });
-    }
-  }, [user]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setProfileError('');
-    setProfileSuccess('');
-
-    try {
-      const data = await updateProfile(token, formData);
-      dispatch(updateUser(data.user));
-      setProfileSuccess('Profil mis à jour avec succès');
-    } catch (err) {
-      setProfileError(err.response?.data?.message || 'Erreur lors de la mise à jour du profil');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -86,32 +52,15 @@ const SettingsPage = () => {
     }
 
     setLoading(true);
-    setProfileError('');
-    setProfileSuccess('');
 
     try {
       await disconnectOAuth(token, provider);
-      setProfileSuccess(`Connexion ${providerName} déconnectée avec succès`);
-      // Recharger les données utilisateur
-      const userData = await getMe(token);
-      dispatch(updateUser(userData.user));
+      setPasswordSuccess(`Connexion ${providerName} déconnectée avec succès`);
     } catch (err) {
-      setProfileError(err.response?.data?.message || 'Erreur lors de la déconnexion OAuth2');
+      setPasswordError(err.response?.data?.message || 'Erreur lors de la déconnexion OAuth2');
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const calculatePercentage = (used, limit) => {
-    return Math.round((used / limit) * 100);
   };
 
   return (
@@ -122,73 +71,17 @@ const SettingsPage = () => {
       </div>
 
       <div className="max-w-4xl space-y-6">
-        {/* Informations utilisateur */}
+        {/* Lien vers le profil */}
         <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Informations utilisateur</h2>
-
-            {profileError && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {profileError}
-              </div>
-            )}
-
-            {profileSuccess && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {profileSuccess}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
-                />
-                <p className="text-xs text-gray-500 mt-1">L'email ne peut pas être modifié</p>
-              </div>
-
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de l'avatar
-                </label>
-                <input
-                  type="url"
-                  id="avatar"
-                  value={formData.avatar}
-                  onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://example.com/avatar.jpg"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
-            </form>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Informations utilisateur</h2>
+          <p className="text-gray-600 mb-4">Pour voir et modifier vos informations personnelles, visitez votre profil.</p>
+          <button
+            onClick={() => navigate('/profile')}
+            className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Voir mon profil
+          </button>
+        </div>
 
         {/* Changement de mot de passe */}
         {user?.password && (
@@ -264,36 +157,21 @@ const SettingsPage = () => {
             </div>
           )}
 
-        {/* Quota de stockage */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quota de stockage</h2>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Espace utilisé</span>
-                <span className="font-semibold text-gray-800">
-                  {formatBytes(user?.storageUsed || 0)} / {formatBytes(user?.storageLimit || 32212254720)}
-                </span>
-              </div>
-
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <Progress value={user?.storageUsed || 0} max={user?.storageLimit || 32212254720} />
-              </div>
-
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500">
-                  {calculatePercentage(user?.storageUsed || 0, user?.storageLimit || 32212254720)}% utilisé
-                </span>
-                <span className="text-gray-500">
-                  {formatBytes((user?.storageLimit || 32212254720) - (user?.storageUsed || 0))} restant
-                </span>
-              </div>
-            </div>
-          </div>
-
         {/* Connexions OAuth2 */}
         <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Connexions OAuth2</h2>
+
+            {passwordError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {passwordError}
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                {passwordSuccess}
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md">

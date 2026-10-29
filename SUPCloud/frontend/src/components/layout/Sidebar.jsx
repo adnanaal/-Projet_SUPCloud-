@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Folder, Trash2, Star, Clock, HardDrive, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Folder, Trash2, Star, Clock, HardDrive, Settings as SettingsIcon, User } from 'lucide-react';
 import { toggleSidebar } from '../../store/uiSlice';
 
 const Sidebar = () => {
@@ -29,6 +29,7 @@ const Sidebar = () => {
     { path: '/recents', icon: Clock, label: 'Récents' },
     { path: '/favorites', icon: Star, label: 'Favoris' },
     { path: '/trash', icon: Trash2, label: 'Corbeille' },
+    { path: '/profile', icon: User, label: 'Profil' },
     { path: '/settings', icon: SettingsIcon, label: 'Paramètres' },
   ];
 
