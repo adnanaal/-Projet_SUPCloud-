@@ -2,16 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import FileView from '../components/common/FileView';
+import UploadModal from '../components/common/UploadModal';
 import FloatingActionButton from '../components/common/FloatingActionButton';
 import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
+import { closeUploadModal } from '../store/uiSlice';
 
 const FilesPage = () => {
   const dispatch = useDispatch();
   const { files } = useSelector((state) => state.files);
   const { folders } = useSelector((state) => state.folders);
+  const { uploadModalOpen } = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
 
   // Charger les fichiers et dossiers au chargement de la page
@@ -68,6 +71,13 @@ const FilesPage = () => {
 
       {/* Bouton flottant draggable */}
       <FloatingActionButton />
+
+      {/* Modal d'upload */}
+      <UploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => dispatch(closeUploadModal())}
+        currentFolderId={null}
+      />
     </MainLayout>
   );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import ToastContainer from '../common/ToastContainer';
 
 const MainLayout = ({ children }) => {
   const { sidebarOpen } = useSelector((state) => state.ui);
@@ -17,6 +18,7 @@ const MainLayout = ({ children }) => {
       >
         <main className="p-8">{children}</main>
       </div>
+      <ToastContainer />
     </div>
   );
 };
