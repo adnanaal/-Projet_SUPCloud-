@@ -3,18 +3,19 @@ import { useSelector, useDispatch } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import FileView from '../components/common/FileView';
 import UploadModal from '../components/common/UploadModal';
+import CreateFolderModal from '../components/common/CreateFolderModal';
 import FloatingActionButton from '../components/common/FloatingActionButton';
 import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
-import { closeUploadModal } from '../store/uiSlice';
+import { closeUploadModal, closeCreateFolderModal } from '../store/uiSlice';
 
 const HomePage = () => {
   const dispatch = useDispatch();
   const { files } = useSelector((state) => state.files);
   const { folders } = useSelector((state) => state.folders);
-  const { uploadModalOpen } = useSelector((state) => state.ui);
+  const { uploadModalOpen, createFolderModalOpen } = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
 
   // Charger les fichiers et dossiers au chargement de la page
@@ -75,6 +76,13 @@ const HomePage = () => {
       <UploadModal
         isOpen={uploadModalOpen}
         onClose={() => dispatch(closeUploadModal())}
+        currentFolderId={null}
+      />
+
+      {/* Modal de création de dossier */}
+      <CreateFolderModal
+        isOpen={createFolderModalOpen}
+        onClose={() => dispatch(closeCreateFolderModal())}
         currentFolderId={null}
       />
     </MainLayout>
