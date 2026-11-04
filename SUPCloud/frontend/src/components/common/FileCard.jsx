@@ -4,15 +4,37 @@ import { useNavigate } from 'react-router-dom';
 import { File, MoreVertical, Download, Trash2, Edit, Move } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
+import { fileService } from '../../services/fileService';
+import { addToast } from '../../store/uiSlice';
 
 const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
 
-  const handleDownload = () => {
-    // TODO: Implémenter le téléchargement
-    console.log('Download file:', file.id);
+  const handleDownload = async () => {
+    try {
+      const blob = await fileService.downloadFile(file.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      dispatch(addToast({
+        message: 'Fichier téléchargé avec succès',
+        type: 'success'
+      }));
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      dispatch(addToast({
+        message: 'Erreur lors du téléchargement',
+        type: 'error'
+      }));
+    }
+    setShowMenu(false);
   };
 
   const handleDelete = () => {

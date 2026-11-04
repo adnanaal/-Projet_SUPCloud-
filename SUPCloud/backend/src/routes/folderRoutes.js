@@ -7,6 +7,7 @@ const authMiddleware = require('../middleware/auth');
 router.post('/', authMiddleware, folderController.createFolder);
 router.get('/', authMiddleware, folderController.getFolders);
 router.get('/:id', authMiddleware, folderController.getFolder);
+router.get('/:id/download', authMiddleware, folderController.downloadFolder);
 router.put('/:id', authMiddleware, folderController.updateFolder);
 router.patch('/:id/move', authMiddleware, folderController.moveFolder);
 router.delete('/:id', authMiddleware, folderController.deleteFolder);

@@ -63,4 +63,16 @@ export const folderService = {
     const response = await axios.delete(`${API_URL}/${id}`, getAuthHeader());
     return response.data;
   },
+
+  // Télécharger un dossier en ZIP
+  downloadFolder: async (id) => {
+    const response = await axios.get(
+      `${API_URL}/${id}/download`,
+      {
+        ...getAuthHeader(),
+        responseType: 'blob',
+      }
+    );
+    return response.data;
+  },
 };

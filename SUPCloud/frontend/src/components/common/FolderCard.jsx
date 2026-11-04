@@ -1,7 +1,9 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Folder, MoreVertical, Edit, Move, Trash2 } from 'lucide-react';
+import { Folder, MoreVertical, Edit, Move, Trash2, Download } from 'lucide-react';
+import { folderService } from '../../services/folderService';
+import { addToast } from '../../store/uiSlice';
 
 const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
@@ -10,6 +12,31 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
 
   const handleClick = () => {
     navigate(`/folders/${folder.id}`);
+  };
+
+  const handleDownload = async () => {
+    try {
+      const blob = await folderService.downloadFolder(folder.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${folder.name}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      dispatch(addToast({
+        message: 'Dossier téléchargé avec succès',
+        type: 'success'
+      }));
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      dispatch(addToast({
+        message: 'Erreur lors du téléchargement',
+        type: 'error'
+      }));
+    }
+    setShowMenu(false);
   };
 
   const handleRename = () => {
@@ -75,6 +102,17 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload();
+                    setShowMenu(false);
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <Download size={16} className="mr-2" />
+                  Télécharger (ZIP)
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

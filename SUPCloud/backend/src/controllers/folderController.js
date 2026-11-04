@@ -1,5 +1,8 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
+const archiver = require('archiver');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Créer un nouveau dossier
@@ -316,6 +319,88 @@ const deleteFolder = async (req, res, next) => {
   }
 };
 
+/**
+ * Télécharger un dossier en ZIP
+ */
+const downloadFolder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Récupérer le dossier
+    const folder = await prisma.folder.findUnique({
+      where: { id },
+      include: {
+        files: true,
+        children: {
+          include: {
+            files: true,
+          },
+        },
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(404, 'Dossier introuvable', 'NotFoundError');
+    }
+
+    // Vérifier que le dossier appartient à l'utilisateur
+    if (folder.userId !== req.user.id) {
+      throw new AppError(403, 'Accès refusé', 'ForbiddenError');
+    }
+
+    // Créer un flux de sortie pour le ZIP
+    res.attachment(`${folder.name}.zip`);
+    const archive = archiver('zip', {
+      zlib: { level: 9 }, // Compression maximale
+    });
+
+    // Gérer les erreurs d'archiver
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    // Envoyer l'archive à la réponse
+    archive.pipe(res);
+
+    // Fonction récursive pour ajouter les fichiers et sous-dossiers
+    const addFolderToArchive = async (currentFolder, parentPath = '') => {
+      const folderPath = path.join(parentPath, currentFolder.name);
+
+      // Ajouter les fichiers du dossier
+      for (const file of currentFolder.files) {
+        const filePath = path.join(__dirname, '..', '..', file.path);
+        if (fs.existsSync(filePath)) {
+          archive.file(filePath, { name: path.join(folderPath, file.name) });
+        }
+      }
+
+      // Ajouter les sous-dossiers récursivement
+      for (const childFolder of currentFolder.children) {
+        const childWithData = await prisma.folder.findUnique({
+          where: { id: childFolder.id },
+          include: {
+            files: true,
+            children: {
+              include: {
+                files: true,
+              },
+            },
+          },
+        });
+        await addFolderToArchive(childWithData, folderPath);
+      }
+    };
+
+    // Ajouter le dossier et ses sous-dossiers à l'archive
+    await addFolderToArchive(folder);
+
+    // Finaliser l'archive
+    archive.finalize();
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createFolder,
   getFolder,
@@ -323,4 +408,5 @@ module.exports = {
   updateFolder,
   moveFolder,
   deleteFolder,
+  downloadFolder,
 };
