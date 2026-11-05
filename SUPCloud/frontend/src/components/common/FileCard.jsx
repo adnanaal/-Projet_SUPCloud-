@@ -5,7 +5,7 @@ import { File, MoreVertical, Download, Trash2, Edit, Move } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
-import { addToast } from '../../store/uiSlice';
+import { addToast, openRenameModal } from '../../store/uiSlice';
 
 const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
@@ -43,8 +43,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   };
 
   const handleRename = () => {
-    // TODO: Implémenter le renommage
-    console.log('Rename file:', file.id);
+    dispatch(openRenameModal({ item: file, type: 'file' }));
   };
 
   const handleMove = () => {

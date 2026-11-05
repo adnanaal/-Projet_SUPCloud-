@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Folder, MoreVertical, Edit, Move, Trash2, Download } from 'lucide-react';
 import { folderService } from '../../services/folderService';
-import { addToast } from '../../store/uiSlice';
+import { addToast, openRenameModal } from '../../store/uiSlice';
 
 const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
@@ -40,8 +40,7 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   };
 
   const handleRename = () => {
-    // TODO: Implémenter le renommage
-    console.log('Rename folder:', folder.id);
+    dispatch(openRenameModal({ item: folder, type: 'folder' }));
   };
 
   const handleMove = () => {
