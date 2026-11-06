@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, UserPlus, Lock, Mail } from 'lucide-react';
+import { register } from '../services/authService';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../store/authSlice';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +15,7 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData({
@@ -37,11 +41,12 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      // Simulation pour tester l'interface - accepter n'importe quelle inscription
-      // Rediriger vers la page de connexion après inscription réussie
-      navigate('/login');
+      const response = await register(formData.email, formData.password, formData.name);
+      // Stocker le token et l'utilisateur dans Redux et localStorage
+      dispatch(loginSuccess({ user: response.user, token: response.token }));
+      navigate('/home');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Erreur lors de l\'inscription');
     } finally {
       setLoading(false);
     }

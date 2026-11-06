@@ -15,12 +15,6 @@ const register = async (req, res, next) => {
       throw new AppError(400, 'Email, mot de passe et nom sont requis', 'ValidationError');
     }
 
-    // Validation de l'email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new AppError(400, 'Format d\'email invalide', 'ValidationError');
-    }
-
     // Validation du mot de passe
     if (password.length < 6) {
       throw new AppError(400, 'Le mot de passe doit contenir au moins 6 caractères', 'ValidationError');
@@ -57,9 +51,16 @@ const register = async (req, res, next) => {
     // Retourner l'utilisateur sans le mot de passe
     const { password: _, ...userWithoutPassword } = user;
 
+    // Convertir les BigInt en nombres pour la sérialisation JSON
+    const serializedUser = {
+      ...userWithoutPassword,
+      storageUsed: userWithoutPassword.storageUsed ? Number(userWithoutPassword.storageUsed) : 0,
+      storageLimit: userWithoutPassword.storageLimit ? Number(userWithoutPassword.storageLimit) : 32212254720,
+    };
+
     res.status(201).json({
       message: 'Utilisateur créé avec succès',
-      user: userWithoutPassword,
+      user: serializedUser,
       token,
     });
   } catch (error) {
@@ -110,9 +111,16 @@ const login = async (req, res, next) => {
     // Retourner l'utilisateur sans le mot de passe
     const { password: _, ...userWithoutPassword } = user;
 
+    // Convertir les BigInt en nombres pour la sérialisation JSON
+    const serializedUser = {
+      ...userWithoutPassword,
+      storageUsed: userWithoutPassword.storageUsed ? Number(userWithoutPassword.storageUsed) : 0,
+      storageLimit: userWithoutPassword.storageLimit ? Number(userWithoutPassword.storageLimit) : 32212254720,
+    };
+
     res.status(200).json({
       message: 'Connexion réussie',
-      user: userWithoutPassword,
+      user: serializedUser,
       token,
     });
   } catch (error) {

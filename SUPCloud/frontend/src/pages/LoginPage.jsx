@@ -19,20 +19,8 @@ const LoginPage = () => {
     setError('');
 
     try {
-      // Simulation pour tester l'interface - accepter n'importe quels identifiants
-      const mockUser = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0] || 'Utilisateur Test',
-        storageUsed: 0,
-        storageLimit: 32212254720, // 30 Go
-        googleId: null,
-        githubId: null,
-      };
-      const mockToken = 'mock-token-for-testing';
-
-      dispatch(loginSuccess({ user: mockUser, token: mockToken }));
-      // Redirection vers la page d'accueil après connexion
+      const response = await login(email, password);
+      dispatch(loginSuccess({ user: response.user, token: response.token }));
       navigate('/home');
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la connexion');

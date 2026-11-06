@@ -27,8 +27,15 @@ const getMe = async (req, res, next) => {
       throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
+    // Convertir les BigInt en nombres pour la sérialisation JSON
+    const serializedUser = {
+      ...user,
+      storageUsed: user.storageUsed ? Number(user.storageUsed) : 0,
+      storageLimit: user.storageLimit ? Number(user.storageLimit) : 32212254720,
+    };
+
     res.status(200).json({
-      user,
+      user: serializedUser,
     });
   } catch (error) {
     next(error);
@@ -72,9 +79,16 @@ const updateProfile = async (req, res, next) => {
       },
     });
 
+    // Convertir les BigInt en nombres pour la sérialisation JSON
+    const serializedUser = {
+      ...user,
+      storageUsed: user.storageUsed ? Number(user.storageUsed) : 0,
+      storageLimit: user.storageLimit ? Number(user.storageLimit) : 32212254720,
+    };
+
     res.status(200).json({
       message: 'Profil mis à jour avec succès',
-      user,
+      user: serializedUser,
     });
   } catch (error) {
     next(error);
