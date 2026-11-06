@@ -37,9 +37,26 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
     setShowMenu(false);
   };
 
-  const handleDelete = () => {
-    // TODO: Implémenter la suppression
-    console.log('Delete file:', file.id);
+  const handleDelete = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir mettre ce fichier à la corbeille ?')) {
+      return;
+    }
+
+    try {
+      await fileService.deleteFile(file.id);
+      dispatch(addToast({
+        message: 'Fichier mis à la corbeille',
+        type: 'success'
+      }));
+      setShowMenu(false);
+      window.location.reload(); // Recharger pour voir le changement
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      dispatch(addToast({
+        message: 'Erreur lors de la suppression',
+        type: 'error'
+      }));
+    }
   };
 
   const handleRename = () => {

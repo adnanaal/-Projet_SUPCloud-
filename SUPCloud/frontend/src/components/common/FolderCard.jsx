@@ -48,9 +48,26 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
     console.log('Move folder:', folder.id);
   };
 
-  const handleDelete = () => {
-    // TODO: Implémenter la suppression
-    console.log('Delete folder:', folder.id);
+  const handleDelete = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir mettre ce dossier à la corbeille ?')) {
+      return;
+    }
+
+    try {
+      await folderService.deleteFolder(folder.id);
+      dispatch(addToast({
+        message: 'Dossier mis à la corbeille',
+        type: 'success'
+      }));
+      setShowMenu(false);
+      window.location.reload(); // Recharger pour voir le changement
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      dispatch(addToast({
+        message: 'Erreur lors de la suppression',
+        type: 'error'
+      }));
+    }
   };
 
   const handleDragStart = (e) => {
