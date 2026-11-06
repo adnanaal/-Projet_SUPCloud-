@@ -10,6 +10,7 @@ import FilesPage from './pages/FilesPage';
 import RecentsPage from './pages/RecentsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
+import TrashPage from './pages/TrashPage';
 import SettingsPage from './pages/SettingsPage';
 
 const ProtectedRoute = ({ children }) => {
@@ -62,6 +63,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trash"
+          element={
+            <ProtectedRoute>
+              <TrashPage />
             </ProtectedRoute>
           }
         />
