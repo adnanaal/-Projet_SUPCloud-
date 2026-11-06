@@ -50,6 +50,48 @@ const TrashPage = () => {
     return diffDays;
   };
 
+  const handleRestore = async (id) => {
+    try {
+      await trashService.restoreTrashItem(id);
+      dispatch(addToast({
+        message: 'Élément restauré avec succès',
+        type: 'success'
+      }));
+      // Recharger la liste
+      const data = await trashService.getTrashItems();
+      setTrashItems(data.items || []);
+    } catch (error) {
+      console.error('Erreur lors de la restauration:', error);
+      dispatch(addToast({
+        message: error.response?.data?.message || 'Erreur lors de la restauration',
+        type: 'error'
+      }));
+    }
+  };
+
+  const handleDeletePermanently = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer définitivement cet élément ? Cette action est irréversible.')) {
+      return;
+    }
+
+    try {
+      await trashService.deleteTrashItem(id);
+      dispatch(addToast({
+        message: 'Élément supprimé définitivement',
+        type: 'success'
+      }));
+      // Recharger la liste
+      const data = await trashService.getTrashItems();
+      setTrashItems(data.items || []);
+    } catch (error) {
+      console.error('Erreur lors de la suppression définitive:', error);
+      dispatch(addToast({
+        message: error.response?.data?.message || 'Erreur lors de la suppression définitive',
+        type: 'error'
+      }));
+    }
+  };
+
   return (
     <MainLayout>
       <div className="mb-8">
@@ -127,19 +169,13 @@ const TrashPage = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <button
-                          onClick={() => {
-                            // TODO: Implémenter la restauration
-                            console.log('Restore:', item.id);
-                          }}
+                          onClick={() => handleRestore(item.id)}
                           className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                         >
                           Restaurer
                         </button>
                         <button
-                          onClick={() => {
-                            // TODO: Implémenter la suppression définitive
-                            console.log('Delete permanently:', item.id);
-                          }}
+                          onClick={() => handleDeletePermanently(item.id)}
                           className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           Supprimer

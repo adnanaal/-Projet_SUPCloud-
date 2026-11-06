@@ -48,10 +48,10 @@ const restoreTrashItem = async (req, res, next) => {
     if (trashItem.type === 'file') {
       // Pour un fichier, on ne peut pas restaurer sans avoir gardé le fichier physique
       // Pour l'instant, on retourne une erreur car le fichier physique a été supprimé
-      throw new AppError(400, 'La restauration de fichiers n\'est pas disponible pour le moment', 'ValidationError');
+      throw new AppError(400, 'La restauration de fichiers n\'est pas disponible car le fichier physique a été supprimé', 'ValidationError');
     } else if (trashItem.type === 'folder') {
       // Pour un dossier, on ne peut pas restaurer sans avoir gardé les fichiers physiques
-      throw new AppError(400, 'La restauration de dossiers n\'est pas disponible pour le moment', 'ValidationError');
+      throw new AppError(400, 'La restauration de dossiers n\'est pas disponible car les fichiers physiques ont été supprimés', 'ValidationError');
     }
 
     // Supprimer l'élément de la corbeille
