@@ -5,18 +5,19 @@ import FileView from '../components/common/FileView';
 import UploadModal from '../components/common/UploadModal';
 import CreateFolderModal from '../components/common/CreateFolderModal';
 import RenameModal from '../components/common/RenameModal';
+import FileViewerModal from '../components/common/FileViewerModal';
 import FloatingActionButton from '../components/common/FloatingActionButton';
 import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
-import { closeUploadModal, closeCreateFolderModal, closeRenameModal } from '../store/uiSlice';
+import { closeUploadModal, closeCreateFolderModal, closeRenameModal, closeFileViewerModal } from '../store/uiSlice';
 
 const FilesPage = () => {
   const dispatch = useDispatch();
   const { files } = useSelector((state) => state.files);
   const { folders } = useSelector((state) => state.folders);
-  const { uploadModalOpen, createFolderModalOpen, renameModalOpen, selectedItem, itemType } = useSelector((state) => state.ui);
+  const { uploadModalOpen, createFolderModalOpen, renameModalOpen, fileViewerModalOpen, selectedItem, itemType } = useSelector((state) => state.ui);
   const [loading, setLoading] = useState(false);
 
   // Charger les fichiers et dossiers au chargement de la page
@@ -94,6 +95,13 @@ const FilesPage = () => {
         onClose={() => dispatch(closeRenameModal())}
         item={selectedItem}
         itemType={itemType}
+      />
+
+      {/* Modal de visionneuse de fichiers */}
+      <FileViewerModal
+        isOpen={fileViewerModalOpen}
+        onClose={() => dispatch(closeFileViewerModal())}
+        file={selectedItem}
       />
     </MainLayout>
   );

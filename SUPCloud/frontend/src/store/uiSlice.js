@@ -8,6 +8,7 @@ const initialState = {
   moveModalOpen: false,
   shareModalOpen: false,
   deleteModalOpen: false,
+  fileViewerModalOpen: false,
   selectedItem: null,
   itemType: null, // 'file' or 'folder'
   toasts: [],
@@ -75,6 +76,14 @@ const uiSlice = createSlice({
       state.selectedItem = null;
       state.itemType = null;
     },
+    openFileViewerModal: (state, action) => {
+      state.fileViewerModalOpen = true;
+      state.selectedItem = action.payload;
+    },
+    closeFileViewerModal: (state) => {
+      state.fileViewerModalOpen = false;
+      state.selectedItem = null;
+    },
     addToast: (state, action) => {
       state.toasts.push({
         id: Date.now(),
@@ -105,6 +114,8 @@ export const {
   closeShareModal,
   openDeleteModal,
   closeDeleteModal,
+  openFileViewerModal,
+  closeFileViewerModal,
   addToast,
   removeToast,
   clearToasts,

@@ -1,11 +1,11 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { File, MoreVertical, Download, Trash2, Edit, Move } from 'lucide-react';
+import { File, MoreVertical, Download, Trash2, Edit, Move, Eye } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
-import { addToast, openRenameModal } from '../../store/uiSlice';
+import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
 
 const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
@@ -68,6 +68,10 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
     console.log('Move file:', file.id);
   };
 
+  const handlePreview = () => {
+    dispatch(openFileViewerModal(file));
+  };
+
   const handleDragStart = (e) => {
     e.dataTransfer.setData('type', 'file');
     e.dataTransfer.setData('id', file.id);
@@ -87,6 +91,11 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onClick={() => {
+        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/')) {
+          handlePreview();
+        }
+      }}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
@@ -117,6 +126,19 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
+                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview();
+                      setShowMenu(false);
+                    }}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <Eye size={16} className="mr-2" />
+                    Prévisualiser
+                  </button>
+                ) : null}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
