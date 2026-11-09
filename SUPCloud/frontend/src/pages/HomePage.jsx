@@ -11,7 +11,7 @@ import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
-import { closeUploadModal, closeCreateFolderModal, closeRenameModal, closeFileViewerModal } from '../store/uiSlice';
+import { closeUploadModal, closeCreateFolderModal, closeRenameModal, closeFileViewerModal, openFileViewerModal } from '../store/uiSlice';
 
 const HomePage = () => {
   const dispatch = useDispatch();
@@ -101,6 +101,8 @@ const HomePage = () => {
         isOpen={fileViewerModalOpen}
         onClose={() => dispatch(closeFileViewerModal())}
         file={selectedItem}
+        files={files}
+        onNavigate={(file) => dispatch(openFileViewerModal(file))}
       />
     </MainLayout>
   );

@@ -2,10 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fileService } from '../../services/fileService';
 
-const FileViewerModal = ({ isOpen, onClose, file }) => {
+const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+
+  // Trouver l'index du fichier actuel dans la liste
+  useEffect(() => {
+    if (file && files.length > 0) {
+      const index = files.findIndex(f => f.id === file.id);
+      setCurrentIndex(index);
+    }
+  }, [file, files]);
+
+  // Gérer les touches du clavier
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        handlePrevious();
+      } else if (e.key === 'ArrowRight' && currentIndex < files.length - 1) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentIndex, files.length]);
 
   useEffect(() => {
     if (isOpen && file) {
@@ -15,6 +42,18 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
       setError(null);
     }
   }, [isOpen, file]);
+
+  const handlePrevious = () => {
+    if (currentIndex > 0 && onNavigate) {
+      onNavigate(files[currentIndex - 1]);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < files.length - 1 && onNavigate) {
+      onNavigate(files[currentIndex + 1]);
+    }
+  };
 
   const loadPreview = async () => {
     setLoading(true);
@@ -50,6 +89,8 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
 
   const isImage = file?.mimeType?.startsWith('image/');
   const isVideo = file?.mimeType?.startsWith('video/');
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < files.length - 1;
 
   if (!isOpen) return null;
 
@@ -80,7 +121,7 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-gray-50">
+        <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-gray-50 relative">
           {loading ? (
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
@@ -105,7 +146,11 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
                   src={previewUrl}
                   controls
                   className="max-w-full max-h-[70vh] rounded-lg"
-                />
+                  preload="metadata"
+                  controlsList="nodownload"
+                >
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
               ) : (
                 <div className="text-center">
                   <p className="text-gray-600">Type de fichier non supporté pour la prévisualisation</p>
@@ -114,6 +159,26 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
               )}
             </div>
           ) : null}
+
+          {/* Boutons de navigation */}
+          {hasPrevious && (
+            <button
+              onClick={handlePrevious}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full shadow-lg transition-all"
+              title="Fichier précédent (←)"
+            >
+              <ChevronLeft size={24} className="text-gray-700" />
+            </button>
+          )}
+          {hasNext && (
+            <button
+              onClick={handleNext}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full shadow-lg transition-all"
+              title="Fichier suivant (→)"
+            >
+              <ChevronRight size={24} className="text-gray-700" />
+            </button>
+          )}
         </div>
 
         {/* Footer */}
@@ -122,6 +187,11 @@ const FileViewerModal = ({ isOpen, onClose, file }) => {
             <div>
               <span className="font-medium">Type :</span> {file?.mimeType}
             </div>
+            {files.length > 1 && (
+              <div className="text-center">
+                <span className="font-medium">{currentIndex + 1}</span> sur <span className="font-medium">{files.length}</span>
+              </div>
+            )}
             <div>
               <span className="font-medium">Taille :</span> {(file?.size / 1024 / 1024).toFixed(2)} MB
             </div>
