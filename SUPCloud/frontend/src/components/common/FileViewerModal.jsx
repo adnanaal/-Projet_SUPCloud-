@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { fileService } from '../../services/fileService';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+// Configuration du worker PDF.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
 
   // Trouver l'index du fichier actuel dans la liste
   useEffect(() => {
@@ -71,24 +80,40 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      const blob = await fileService.downloadFile(file.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erreur lors du téléchargement:', error);
-    }
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
+    setError(null);
+  };
+
+  const onDocumentLoadError = (error) => {
+    console.error('Erreur lors du chargement du PDF:', error);
+    setError('Impossible de charger le PDF');
+  };
+
+  const changePage = (offset) => {
+    setPageNumber((prevPageNumber) => prevPageNumber + offset);
+  };
+
+  const previousPage = () => {
+    changePage(-1);
+  };
+
+  const nextPage = () => {
+    changePage(1);
+  };
+
+  const zoomIn = () => {
+    setScale((prevScale) => Math.min(prevScale + 0.2, 3.0));
+  };
+
+  const zoomOut = () => {
+    setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   };
 
   const isImage = file?.mimeType?.startsWith('image/');
   const isVideo = file?.mimeType?.startsWith('video/');
+  const isPdf = file?.mimeType === 'application/pdf';
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < files.length - 1;
 
@@ -151,6 +176,76 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                 >
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
+              ) : isPdf ? (
+                <div className="flex flex-col items-center w-full">
+                  {/* Contrôles PDF */}
+                  <div className="flex items-center space-x-4 mb-4 bg-white p-2 rounded-lg shadow-sm">
+                    <button
+                      onClick={zoomOut}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Zoom arrière"
+                    >
+                      <ZoomOut size={18} className="text-gray-600" />
+                    </button>
+                    <span className="text-sm text-gray-600 min-w-[60px] text-center">
+                      {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                      onClick={zoomIn}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Zoom avant"
+                    >
+                      <ZoomIn size={18} className="text-gray-600" />
+                    </button>
+                    {numPages && (
+                      <span className="text-sm text-gray-600">
+                        Page {pageNumber} sur {numPages}
+                      </span>
+                    )}
+                  </div>
+                  {/* Document PDF */}
+                  <div className="flex items-center justify-center w-full max-h-[65vh] overflow-auto">
+                    <Document
+                      file={previewUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                      loading={
+                        <div className="text-center py-12">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                          </div>
+                          <p className="text-gray-600">Chargement du PDF...</p>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                      />
+                    </Document>
+                  </div>
+                  {/* Navigation PDF */}
+                  {numPages && numPages > 1 && (
+                    <div className="flex items-center space-x-4 mt-4">
+                      <button
+                        onClick={previousPage}
+                        disabled={pageNumber <= 1}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        ← Précédent
+                      </button>
+                      <button
+                        onClick={nextPage}
+                        disabled={pageNumber >= numPages}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Suivant →
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="text-center">
                   <p className="text-gray-600">Type de fichier non supporté pour la prévisualisation</p>

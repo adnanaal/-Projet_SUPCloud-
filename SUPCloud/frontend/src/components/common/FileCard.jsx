@@ -92,7 +92,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={() => {
-        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/')) {
+        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf') {
           handlePreview();
         }
       }}
@@ -126,7 +126,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') ? (
+                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
