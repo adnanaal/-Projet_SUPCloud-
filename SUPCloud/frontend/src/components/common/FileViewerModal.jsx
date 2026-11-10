@@ -16,6 +16,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
+  const [textContent, setTextContent] = useState('');
 
   // Trouver l'index du fichier actuel dans la liste
   useEffect(() => {
@@ -67,11 +68,20 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const loadPreview = async () => {
     setLoading(true);
     setError(null);
+    setTextContent('');
 
     try {
-      const blob = await fileService.downloadFile(file.id);
-      const url = window.URL.createObjectURL(blob);
-      setPreviewUrl(url);
+      if (file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html') {
+        // Pour les fichiers texte, charger le contenu en texte
+        const blob = await fileService.downloadFile(file.id);
+        const text = await blob.text();
+        setTextContent(text);
+      } else {
+        // Pour les autres types, charger en blob
+        const blob = await fileService.downloadFile(file.id);
+        const url = window.URL.createObjectURL(blob);
+        setPreviewUrl(url);
+      }
     } catch (err) {
       console.error('Erreur lors du chargement de la prévisualisation:', err);
       setError('Impossible de charger la prévisualisation');
@@ -114,6 +124,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const isImage = file?.mimeType?.startsWith('image/');
   const isVideo = file?.mimeType?.startsWith('video/');
   const isPdf = file?.mimeType === 'application/pdf';
+  const isText = file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html';
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < files.length - 1;
 
@@ -158,7 +169,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
             <div className="text-center">
               <p className="text-red-600">{error}</p>
             </div>
-          ) : previewUrl ? (
+          ) : previewUrl || isText ? (
             <div className="flex items-center justify-center w-full h-full">
               {isImage ? (
                 <img
@@ -245,6 +256,14 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                       </button>
                     </div>
                   )}
+                </div>
+              ) : isText ? (
+                <div className="flex flex-col w-full max-h-[70vh]">
+                  <div className="bg-white p-4 rounded-lg shadow-sm w-full overflow-auto flex-1">
+                    <pre className="text-sm text-gray-800 font-mono whitespace-pre-wrap">
+                      {textContent || 'Contenu vide'}
+                    </pre>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center">
