@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { fileService } from '../../services/fileService';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -19,6 +19,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [textContent, setTextContent] = useState('');
   const [errorDetails, setErrorDetails] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const cacheRef = useRef({});
 
   // Trouver l'index du fichier actuel dans la liste
   useEffect(() => {
@@ -68,6 +70,16 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   };
 
   const loadPreview = async () => {
+    if (!file) return;
+
+    // Vérifier le cache
+    if (cacheRef.current[file.id]) {
+      setPreviewUrl(cacheRef.current[file.id]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setErrorDetails(null);
@@ -79,6 +91,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
         const blob = await fileService.downloadFile(file.id);
         const text = await blob.text();
         setTextContent(text);
+        // Pas de cache pour les textes (peu volumineux mais variable)
       } else {
         // Pour les autres types, charger en blob avec timeout
         const blob = await Promise.race([
@@ -89,6 +102,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
         ]);
         const url = window.URL.createObjectURL(blob);
         setPreviewUrl(url);
+        // Mettre en cache le blob URL
+        cacheRef.current[file.id] = url;
       }
     } catch (err) {
       console.error('Erreur lors du chargement de la prévisualisation:', err);
@@ -122,6 +137,57 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     setRetryCount((prev) => prev + 1);
     loadPreview();
   };
+
+  // Nettoyer le cache quand le modal se ferme
+  useEffect(() => {
+    if (!isOpen) {
+      // Libérer les URLs blob du cache
+      Object.values(cacheRef.current).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          window.URL.revokeObjectURL(url);
+        }
+      });
+      cacheRef.current = {};
+    }
+  }, [isOpen]);
+
+  // Précharger les fichiers adjacents pour la navigation
+  useEffect(() => {
+    if (isOpen && currentIndex >= 0 && files.length > 1) {
+      const preloadFile = async (index) => {
+        if (index < 0 || index >= files.length) return;
+        const adjacentFile = files[index];
+        if (cacheRef.current[adjacentFile.id]) return;
+
+        try {
+          const blob = await fileService.downloadFile(adjacentFile.id);
+          const url = window.URL.createObjectURL(blob);
+          cacheRef.current[adjacentFile.id] = url;
+        } catch (err) {
+          // Ignorer les erreurs de préchargement
+        }
+      };
+
+      // Précharger le fichier précédent et suivant
+      if (currentIndex > 0) {
+        preloadFile(currentIndex - 1);
+      }
+      if (currentIndex < files.length - 1) {
+        preloadFile(currentIndex + 1);
+      }
+    }
+  }, [isOpen, currentIndex, files]);
+
+  // Charger les dimensions de l'image
+  useEffect(() => {
+    if (previewUrl && isImage) {
+      const img = new Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.src = previewUrl;
+    }
+  }, [previewUrl, isImage]);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -218,11 +284,20 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
           ) : previewUrl || isText ? (
             <div className="flex items-center justify-center w-full h-full">
               {isImage ? (
-                <img
-                  src={previewUrl}
-                  alt={file?.name}
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                />
+                <div className="flex flex-col items-center">
+                  <img
+                    src={previewUrl}
+                    alt={file?.name}
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  {imageDimensions.width > 0 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      {imageDimensions.width} × {imageDimensions.height} pixels
+                    </p>
+                  )}
+                </div>
               ) : isVideo ? (
                 <video
                   src={previewUrl}
@@ -230,6 +305,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                   className="max-w-full max-h-[70vh] rounded-lg"
                   preload="metadata"
                   controlsList="nodownload"
+                  loading="lazy"
                 >
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
@@ -274,12 +350,21 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                           <p className="text-gray-600">Chargement du PDF...</p>
                         </div>
                       }
+                      options={{
+                        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/cmaps/',
+                        cMapPacked: true,
+                      }}
                     >
                       <Page
                         pageNumber={pageNumber}
                         scale={scale}
                         renderTextLayer={true}
                         renderAnnotationLayer={true}
+                        loading={
+                          <div className="flex items-center justify-center h-32">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                          </div>
+                        }
                       />
                     </Document>
                   </div>
