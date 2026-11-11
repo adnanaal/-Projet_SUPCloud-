@@ -158,6 +158,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const isVideo = file?.mimeType?.startsWith('video/');
   const isPdf = file?.mimeType === 'application/pdf';
   const isText = file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html';
+  const isAudio = file?.mimeType?.startsWith('audio/');
+  const isSupported = isImage || isVideo || isPdf || isText || isAudio;
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < files.length - 1;
 
@@ -307,6 +309,43 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                     <pre className="text-sm text-gray-800 font-mono whitespace-pre-wrap">
                       {textContent || 'Contenu vide'}
                     </pre>
+                  </div>
+                </div>
+              ) : isAudio ? (
+                <div className="flex flex-col items-center justify-center w-full max-h-[70vh]">
+                  <div className="bg-white p-8 rounded-lg shadow-sm text-center">
+                    <div className="mb-4">
+                      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Fichier audio</h4>
+                    <p className="text-sm text-gray-500 mb-4">{file?.name}</p>
+                    <audio
+                      src={previewUrl}
+                      controls
+                      className="w-full max-w-md"
+                    >
+                      Votre navigateur ne supporte pas la lecture audio.
+                    </audio>
+                  </div>
+                </div>
+              ) : isSupported ? (
+                <div className="text-center px-4">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md">
+                    <div className="mb-4">
+                      <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">Prévisualisation non disponible</h4>
+                    <p className="text-sm text-gray-500 mb-4">Ce type de fichier ne peut pas être prévisualisé.</p>
+                    <button
+                      onClick={handleDownload}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      Télécharger le fichier
+                    </button>
                   </div>
                 </div>
               ) : (

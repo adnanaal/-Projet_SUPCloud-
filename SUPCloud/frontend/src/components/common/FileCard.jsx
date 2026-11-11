@@ -92,7 +92,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={() => {
-        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html') {
+        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html' || file.mimeType?.startsWith('audio/')) {
           handlePreview();
         }
       }}
@@ -126,7 +126,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html' ? (
+                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html' || file.mimeType?.startsWith('audio/') ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
