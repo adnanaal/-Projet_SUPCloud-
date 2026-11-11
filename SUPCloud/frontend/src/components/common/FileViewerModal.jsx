@@ -17,6 +17,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
   const [textContent, setTextContent] = useState('');
+  const [errorDetails, setErrorDetails] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Trouver l'index du fichier actuel dans la liste
   useEffect(() => {
@@ -68,6 +70,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const loadPreview = async () => {
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
     setTextContent('');
 
     try {
@@ -77,17 +80,47 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
         const text = await blob.text();
         setTextContent(text);
       } else {
-        // Pour les autres types, charger en blob
-        const blob = await fileService.downloadFile(file.id);
+        // Pour les autres types, charger en blob avec timeout
+        const blob = await Promise.race([
+          fileService.downloadFile(file.id),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout: Le fichier met trop de temps à charger')), 30000)
+          )
+        ]);
         const url = window.URL.createObjectURL(blob);
         setPreviewUrl(url);
       }
     } catch (err) {
       console.error('Erreur lors du chargement de la prévisualisation:', err);
-      setError('Impossible de charger la prévisualisation');
+
+      // Gestion spécifique des erreurs
+      if (err.message.includes('Timeout')) {
+        setError('Le fichier met trop de temps à charger. Vérifiez votre connexion.');
+        setErrorDetails('Timeout après 30 secondes');
+      } else if (err.response?.status === 404) {
+        setError('Le fichier est introuvable ou a été supprimé.');
+        setErrorDetails('Erreur 404: Fichier introuvable');
+      } else if (err.response?.status === 403) {
+        setError('Vous n\'avez pas la permission d\'accéder à ce fichier.');
+        setErrorDetails('Erreur 403: Accès refusé');
+      } else if (err.response?.status === 413) {
+        setError('Le fichier est trop volumineux pour être prévisualisé.');
+        setErrorDetails('Erreur 413: Fichier trop grand');
+      } else if (err.message.includes('network')) {
+        setError('Erreur de connexion. Vérifiez votre connexion internet.');
+        setErrorDetails('Erreur réseau');
+      } else {
+        setError('Impossible de charger la prévisualisation.');
+        setErrorDetails(err.message || 'Erreur inconnue');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1);
+    loadPreview();
   };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
@@ -166,8 +199,19 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
               <p className="text-gray-600">Chargement...</p>
             </div>
           ) : error ? (
-            <div className="text-center">
-              <p className="text-red-600">{error}</p>
+            <div className="text-center px-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+                <p className="text-red-600 font-medium mb-2">{error}</p>
+                {errorDetails && (
+                  <p className="text-red-500 text-sm mb-4">{errorDetails}</p>
+                )}
+                <button
+                  onClick={handleRetry}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Réessayer
+                </button>
+              </div>
             </div>
           ) : previewUrl || isText ? (
             <div className="flex items-center justify-center w-full h-full">
