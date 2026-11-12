@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api/users';
+const API_URL = 'http://localhost:3000/api/users';
 
 /**
  * Obtenir les informations de l'utilisateur connecté
@@ -52,6 +52,21 @@ export const disconnectOAuth = async (token, provider) => {
   const response = await axios.delete(`${API_URL}/me/oauth/${provider}`, {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+/**
+ * Supprimer le compte utilisateur
+ */
+export const deleteAccount = async (token, password) => {
+  const response = await axios.delete(`${API_URL}/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    data: {
+      password,
     },
   });
   return response.data;

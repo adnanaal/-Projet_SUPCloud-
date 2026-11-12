@@ -47,7 +47,7 @@ const getMe = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, avatar } = req.body;
+    const { name, email, avatar } = req.body;
 
     // Vérifier si l'utilisateur existe
     const existingUser = await prisma.user.findUnique({
@@ -58,11 +58,23 @@ const updateProfile = async (req, res, next) => {
       throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
+    // Si email change, vérifier qu'il n'est pas déjà utilisé
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (emailExists) {
+        throw new AppError(409, 'Cet email est déjà utilisé par un autre compte', 'ConflictError');
+      }
+    }
+
     // Mettre à jour l'utilisateur
     const user = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         ...(name && { name }),
+        ...(email && { email }),
         ...(avatar && { avatar }),
       },
       select: {
@@ -208,9 +220,51 @@ const disconnectOAuth = async (req, res, next) => {
   }
 };
 
+/**
+ * Supprimer le compte utilisateur
+ */
+const deleteAccount = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    // Vérifier si l'utilisateur existe
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
+    }
+
+    // Vérifier le mot de passe si l'utilisateur a un mot de passe local
+    if (user.password) {
+      if (!password) {
+        throw new AppError(400, 'Mot de passe requis pour supprimer le compte', 'ValidationError');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new AppError(401, 'Mot de passe incorrect', 'AuthenticationError');
+      }
+    }
+
+    // Supprimer l'utilisateur (cascade supprimera les fichiers, dossiers, etc.)
+    await prisma.user.delete({
+      where: { id: req.user.id },
+    });
+
+    res.status(200).json({
+      message: 'Compte supprimé avec succès',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMe,
   updateProfile,
   changePassword,
   disconnectOAuth,
+  deleteAccount,
 };

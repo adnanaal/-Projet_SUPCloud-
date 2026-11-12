@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { fileService } from '../../services/fileService';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
+// import { Document, Page, pdfjs } from 'react-pdf';
+// import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+// import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-// Configuration du worker PDF.js
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// // Configuration du worker PDF.js
+// pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -21,6 +21,16 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const cacheRef = useRef({});
+
+  // Variables de détection de type de fichier
+  const isImage = file?.mimeType?.startsWith('image/');
+  const isVideo = file?.mimeType?.startsWith('video/');
+  const isPdf = file?.mimeType === 'application/pdf';
+  const isText = file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html';
+  const isAudio = file?.mimeType?.startsWith('audio/');
+  const isSupported = isImage || isVideo || isPdf || isText || isAudio;
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < files.length - 1;
 
   // Trouver l'index du fichier actuel dans la liste
   useEffect(() => {
@@ -220,15 +230,6 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   };
 
-  const isImage = file?.mimeType?.startsWith('image/');
-  const isVideo = file?.mimeType?.startsWith('video/');
-  const isPdf = file?.mimeType === 'application/pdf';
-  const isText = file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html';
-  const isAudio = file?.mimeType?.startsWith('audio/');
-  const isSupported = isImage || isVideo || isPdf || isText || isAudio;
-  const hasPrevious = currentIndex > 0;
-  const hasNext = currentIndex < files.length - 1;
-
   if (!isOpen) return null;
 
   return (
@@ -311,82 +312,16 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                 </video>
               ) : isPdf ? (
                 <div className="flex flex-col items-center w-full">
-                  {/* Contrôles PDF */}
-                  <div className="flex items-center space-x-4 mb-4 bg-white p-2 rounded-lg shadow-sm">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md text-center">
+                    <p className="text-gray-600 mb-2">Prévisualisation PDF désactivée temporairement</p>
+                    <p className="text-sm text-gray-500 mb-4">{file?.name}</p>
                     <button
-                      onClick={zoomOut}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Zoom arrière"
+                      onClick={handleDownload}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                     >
-                      <ZoomOut size={18} className="text-gray-600" />
+                      Télécharger le PDF
                     </button>
-                    <span className="text-sm text-gray-600 min-w-[60px] text-center">
-                      {Math.round(scale * 100)}%
-                    </span>
-                    <button
-                      onClick={zoomIn}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Zoom avant"
-                    >
-                      <ZoomIn size={18} className="text-gray-600" />
-                    </button>
-                    {numPages && (
-                      <span className="text-sm text-gray-600">
-                        Page {pageNumber} sur {numPages}
-                      </span>
-                    )}
                   </div>
-                  {/* Document PDF */}
-                  <div className="flex items-center justify-center w-full max-h-[65vh] overflow-auto">
-                    <Document
-                      file={previewUrl}
-                      onLoadSuccess={onDocumentLoadSuccess}
-                      onLoadError={onDocumentLoadError}
-                      loading={
-                        <div className="text-center py-12">
-                          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                          </div>
-                          <p className="text-gray-600">Chargement du PDF...</p>
-                        </div>
-                      }
-                      options={{
-                        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/cmaps/',
-                        cMapPacked: true,
-                      }}
-                    >
-                      <Page
-                        pageNumber={pageNumber}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        loading={
-                          <div className="flex items-center justify-center h-32">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                          </div>
-                        }
-                      />
-                    </Document>
-                  </div>
-                  {/* Navigation PDF */}
-                  {numPages && numPages > 1 && (
-                    <div className="flex items-center space-x-4 mt-4">
-                      <button
-                        onClick={previousPage}
-                        disabled={pageNumber <= 1}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        ← Précédent
-                      </button>
-                      <button
-                        onClick={nextPage}
-                        disabled={pageNumber >= numPages}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Suivant →
-                      </button>
-                    </div>
-                  )}
                 </div>
               ) : isText ? (
                 <div className="flex flex-col w-full max-h-[70vh]">

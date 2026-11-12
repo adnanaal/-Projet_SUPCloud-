@@ -8,5 +8,6 @@ router.get('/me', authMiddleware, userController.getMe);
 router.put('/me', authMiddleware, userController.updateProfile);
 router.put('/me/password', authMiddleware, userController.changePassword);
 router.delete('/me/oauth/:provider', authMiddleware, userController.disconnectOAuth);
+router.delete('/me', authMiddleware, userController.deleteAccount);
 
 module.exports = router;
