@@ -1,5 +1,14 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
+const serializeBigInt = require('../utils/serialize');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Résout le chemin physique d'un fichier (absolu ou relatif historique)
+ */
+const resolveFilePath = (filePath) =>
+  path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', '..', filePath);
 
 /**
  * Formater les octets en unités lisibles
@@ -91,9 +100,17 @@ const uploadFile = async (req, res, next) => {
 
     res.status(201).json({
       message: 'Fichier uploadé avec succès',
-      file: uploadedFile,
+      file: serializeBigInt(uploadedFile),
     });
   } catch (error) {
+    // Supprimer le fichier physique si Multer l'a déjà écrit sur disque
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Erreur lors de la suppression du fichier orphelin:', unlinkError);
+      }
+    }
     next(error);
   }
 };
@@ -119,7 +136,7 @@ const getFile = async (req, res, next) => {
     }
 
     res.status(200).json({
-      file,
+      file: serializeBigInt(file),
     });
   } catch (error) {
     next(error);
@@ -144,7 +161,7 @@ const getFiles = async (req, res, next) => {
     });
 
     res.status(200).json({
-      files,
+      files: serializeBigInt(files),
     });
   } catch (error) {
     next(error);
@@ -213,7 +230,7 @@ const renameFile = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Fichier renommé avec succès',
-      file: updatedFile,
+      file: serializeBigInt(updatedFile),
     });
   } catch (error) {
     next(error);
@@ -266,7 +283,7 @@ const moveFile = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Fichier déplacé avec succès',
-      file: updatedFile,
+      file: serializeBigInt(updatedFile),
     });
   } catch (error) {
     next(error);
@@ -324,10 +341,8 @@ const deleteFile = async (req, res, next) => {
     });
 
     // Supprimer le fichier physique du disque
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(__dirname, '..', '..', file.path);
-    
+    const filePath = resolveFilePath(file.path);
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

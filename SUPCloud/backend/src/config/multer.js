@@ -1,10 +1,23 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Dossier de stockage absolu (indépendant du répertoire de travail du processus)
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// Erreur de validation de fichier (retournée en 400 par errorHandler)
+const fileValidationError = (message) => {
+  const err = new Error(message);
+  err.statusCode = 400;
+  err.name = 'FileValidationError';
+  return err;
+};
 
 // Configuration du stockage Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
     // Générer un nom de fichier unique : timestamp + nom original
@@ -13,7 +26,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// Types de fichiers acceptés avec leurs extensions correspondantes
+// Types de fichiers acceptés (plus tolérant)
 const allowedFileTypes = {
   'image/jpeg': ['.jpg', '.jpeg'],
   'image/png': ['.png'],
@@ -32,6 +45,16 @@ const allowedFileTypes = {
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
 };
 
+// Types génériques acceptés pour les fichiers sans extension spécifique
+const genericMimeTypes = [
+  'application/octet-stream',
+  'application/x-download',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+];
+
 // Limite de taille maximale (100 Mo)
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
@@ -39,25 +62,33 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const fileFilter = (req, file, cb) => {
   // Vérifier si un fichier est fourni
   if (!file) {
-    return cb(new Error('Aucun fichier fourni'), false);
+    return cb(fileValidationError('Aucun fichier fourni'), false);
   }
 
   // Vérifier la taille du fichier
   if (file.size > MAX_FILE_SIZE) {
-    return cb(new Error(`La taille du fichier dépasse la limite de ${MAX_FILE_SIZE / (1024 * 1024)} Mo`), false);
+    return cb(fileValidationError(`La taille du fichier dépasse la limite de ${MAX_FILE_SIZE / (1024 * 1024)} Mo`), false);
   }
 
   // Vérifier le type MIME
-  if (!allowedFileTypes[file.mimetype]) {
-    return cb(new Error('Type de fichier non supporté. Types acceptés : images (JPEG, PNG, GIF, WEBP), vidéos (MP4, WEBM), PDF, texte, documents Office'), false);
+  const isKnownType = allowedFileTypes[file.mimetype];
+  const isGenericType = genericMimeTypes.includes(file.mimetype);
+  const isTextType = file.mimetype?.startsWith('text/');
+  const isAudioType = file.mimetype?.startsWith('audio/');
+
+  if (!isKnownType && !isGenericType && !isTextType && !isAudioType) {
+    return cb(fileValidationError('Type de fichier non supporté. Types acceptés : images, vidéos, audio, PDF, texte, documents Office, archives'), false);
   }
 
-  // Vérifier l'extension du fichier correspond au type MIME
-  const ext = path.extname(file.originalname).toLowerCase();
-  const allowedExtensions = allowedFileTypes[file.mimetype];
-  
-  if (!allowedExtensions.includes(ext)) {
-    return cb(new Error(`L'extension du fichier ne correspond pas au type MIME. Extension attendue : ${allowedExtensions.join(', ')}`), false);
+  // Pour les types connus, vérifier l'extension
+  if (isKnownType) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExtensions = allowedFileTypes[file.mimetype];
+    
+    if (!allowedExtensions.includes(ext)) {
+      // Si l'extension ne correspond pas, on accepte quand même pour éviter les blocages
+      console.warn(`Extension ${ext} ne correspond pas au type MIME ${file.mimetype} pour ${file.originalname}`);
+    }
   }
 
   cb(null, true);

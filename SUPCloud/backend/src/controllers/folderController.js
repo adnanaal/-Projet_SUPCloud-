@@ -1,8 +1,15 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
+const serializeBigInt = require('../utils/serialize');
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
+
+/**
+ * Résout le chemin physique d'un fichier (absolu ou relatif historique)
+ */
+const resolveFilePath = (filePath) =>
+  path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', '..', filePath);
 
 /**
  * Créer un nouveau dossier
@@ -46,7 +53,7 @@ const createFolder = async (req, res, next) => {
 
     res.status(201).json({
       message: 'Dossier créé avec succès',
-      folder,
+      folder: serializeBigInt(folder),
     });
   } catch (error) {
     next(error);
@@ -78,7 +85,7 @@ const getFolder = async (req, res, next) => {
     }
 
     res.status(200).json({
-      folder,
+      folder: serializeBigInt(folder),
     });
   } catch (error) {
     next(error);
@@ -107,7 +114,7 @@ const getFolders = async (req, res, next) => {
     });
 
     res.status(200).json({
-      folders,
+      folders: serializeBigInt(folders),
     });
   } catch (error) {
     next(error);
@@ -172,7 +179,7 @@ const updateFolder = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Dossier mis à jour avec succès',
-      folder,
+      folder: serializeBigInt(folder),
     });
   } catch (error) {
     next(error);
@@ -236,7 +243,7 @@ const moveFolder = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Dossier déplacé avec succès',
-      folder,
+      folder: serializeBigInt(folder),
     });
   } catch (error) {
     next(error);
@@ -296,11 +303,8 @@ const deleteFolder = async (req, res, next) => {
     }
 
     // Supprimer les fichiers physiques du disque
-    const fs = require('fs');
-    const path = require('path');
-    
     for (const file of folder.files) {
-      const filePath = path.join(__dirname, '..', '..', file.path);
+      const filePath = resolveFilePath(file.path);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -368,7 +372,7 @@ const downloadFolder = async (req, res, next) => {
 
       // Ajouter les fichiers du dossier
       for (const file of currentFolder.files) {
-        const filePath = path.join(__dirname, '..', '..', file.path);
+        const filePath = resolveFilePath(file.path);
         if (fs.existsSync(filePath)) {
           archive.file(filePath, { name: path.join(folderPath, file.name) });
         }

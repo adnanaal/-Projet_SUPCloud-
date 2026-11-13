@@ -13,7 +13,7 @@ const getAuthHeader = () => {
 
 export const fileService = {
   // Uploader un fichier
-  uploadFile: async (file, folderId = null) => {
+  uploadFile: async (file, folderId = null, onProgress = null) => {
     const formData = new FormData();
     formData.append('file', file);
     if (folderId) {
@@ -22,10 +22,15 @@ export const fileService = {
 
     const response = await axios.post(`${API_URL}/upload`, formData, {
       ...getAuthHeader(),
-      headers: {
-        ...getAuthHeader().headers,
-        'Content-Type': 'multipart/form-data',
-      },
+      // Ne pas définir Content-Type manuellement : Axios doit générer le boundary multipart
+      onUploadProgress: onProgress
+        ? (progressEvent) => {
+            const percent = progressEvent.total
+              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              : 0;
+            onProgress(percent);
+          }
+        : undefined,
     });
 
     return response.data;

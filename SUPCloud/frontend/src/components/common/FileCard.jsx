@@ -91,11 +91,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onClick={() => {
-        if (file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html' || file.mimeType?.startsWith('audio/')) {
-          handlePreview();
-        }
-      }}
+      onClick={handlePreview}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
@@ -126,19 +122,17 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-                {file.mimeType?.startsWith('image/') || file.mimeType?.startsWith('video/') || file.mimeType === 'application/pdf' || file.mimeType === 'text/plain' || file.mimeType === 'text/markdown' || file.mimeType === 'text/html' || file.mimeType?.startsWith('audio/') ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePreview();
-                      setShowMenu(false);
-                    }}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Eye size={16} className="mr-2" />
-                    Prévisualiser
-                  </button>
-                ) : null}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePreview();
+                    setShowMenu(false);
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <Eye size={16} className="mr-2" />
+                  Prévisualiser
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

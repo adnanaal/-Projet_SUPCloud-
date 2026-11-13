@@ -11,6 +11,8 @@ import { setFiles, setLoading, setError } from '../store/filesSlice';
 import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
+import { getMe } from '../services/userService';
+import { updateUser } from '../store/authSlice';
 import { closeUploadModal, closeCreateFolderModal, closeRenameModal, closeFileViewerModal, openFileViewerModal } from '../store/uiSlice';
 
 const FilesPage = () => {
@@ -32,6 +34,13 @@ const FilesPage = () => {
         // Charger les dossiers de la racine
         const foldersData = await folderService.getFolders();
         dispatch(setFolders(foldersData.folders || []));
+
+        // Rafraîchir les informations utilisateur (stockage)
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userData = await getMe(token);
+          dispatch(updateUser(userData.user));
+        }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
         dispatch(setError('Erreur lors du chargement des fichiers et dossiers'));

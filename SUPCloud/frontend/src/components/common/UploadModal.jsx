@@ -10,7 +10,6 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
-  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   if (!isOpen) return null;
 
@@ -40,44 +39,45 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
     if (selectedFiles.length === 0) return;
 
     setUploading(true);
-    setUploadedFiles([]);
+    setUploadProgress({});
+
+    let successCount = 0;
 
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        if (currentFolderId) {
-          formData.append('folderId', currentFolderId);
-        }
 
         try {
-          await fileService.uploadFile(formData);
-          setUploadedFiles([...uploadedFiles, file.name]);
-          setUploadProgress({ ...uploadProgress, [file.name]: 100 });
+          await fileService.uploadFile(file, currentFolderId, (percent) => {
+            setUploadProgress((prev) => ({ ...prev, [file.name]: percent }));
+          });
+          successCount++;
+          setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }));
         } catch (error) {
           console.error(`Erreur lors de l'upload de ${file.name}:`, error);
+          const backendMessage = error.response?.data?.message;
           dispatch(addToast({
-            message: `Erreur lors de l'upload de ${file.name}`,
+            message: `Erreur lors de l'upload de ${file.name}: ${backendMessage || error.message}`,
             type: 'error'
           }));
         }
       }
 
-      dispatch(addToast({
-        message: `${uploadedFiles.length} fichier(s) uploadé(s) avec succès`,
-        type: 'success'
-      }));
+      if (successCount > 0) {
+        dispatch(addToast({
+          message: `${successCount} fichier(s) uploadé(s) avec succès`,
+          type: 'success'
+        }));
+      }
 
       setSelectedFiles([]);
       setUploadProgress({});
-      setUploadedFiles([]);
       onClose();
       window.location.reload(); // Recharger pour voir les nouveaux fichiers
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       dispatch(addToast({
-        message: 'Erreur lors de l\'upload',
+        message: error.response?.data?.message || 'Erreur lors de l\'upload',
         type: 'error'
       }));
     } finally {

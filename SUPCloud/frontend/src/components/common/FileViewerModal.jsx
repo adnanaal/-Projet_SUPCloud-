@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { fileService } from '../../services/fileService';
-// import { Document, Page, pdfjs } from 'react-pdf';
-// import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-// import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { Document, Page, pdfjs } from 'react-pdf';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.js?url';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+import { formatBytes } from '../../utils/formatBytes';
 
-// // Configuration du worker PDF.js
-// pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configuration du worker PDF.js
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -20,6 +22,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [errorDetails, setErrorDetails] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [unsupportedFormat, setUnsupportedFormat] = useState(false);
   const cacheRef = useRef({});
 
   // Variables de détection de type de fichier
@@ -64,6 +67,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     } else {
       setPreviewUrl(null);
       setError(null);
+      setUnsupportedFormat(false);
     }
   }, [isOpen, file]);
 
@@ -94,6 +98,14 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     setError(null);
     setErrorDetails(null);
     setTextContent('');
+    setUnsupportedFormat(false);
+
+    // Format non prévisualisable : pas besoin de télécharger le fichier
+    if (!isSupported) {
+      setUnsupportedFormat(true);
+      setLoading(false);
+      return;
+    }
 
     try {
       if (file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html') {
@@ -146,6 +158,22 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
     loadPreview();
+  };
+
+  const handleDownload = async () => {
+    try {
+      const blob = await fileService.downloadFile(file.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Erreur lors du téléchargement:', err);
+    }
   };
 
   // Nettoyer le cache quand le modal se ferme
@@ -282,6 +310,25 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                 </button>
               </div>
             </div>
+          ) : unsupportedFormat ? (
+            <div className="text-center px-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md">
+                <div className="mb-4">
+                  <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Prévisualisation non disponible</h4>
+                <p className="text-sm text-gray-500 mb-1">Ce type de fichier ne peut pas être prévisualisé.</p>
+                <p className="text-xs text-gray-400 mb-4">{file?.mimeType}</p>
+                <button
+                  onClick={handleDownload}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Télécharger le fichier
+                </button>
+              </div>
+            </div>
           ) : previewUrl || isText ? (
             <div className="flex items-center justify-center w-full h-full">
               {isImage ? (
@@ -311,16 +358,70 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                   Votre navigateur ne supporte pas la lecture de vidéos.
                 </video>
               ) : isPdf ? (
-                <div className="flex flex-col items-center w-full">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md text-center">
-                    <p className="text-gray-600 mb-2">Prévisualisation PDF désactivée temporairement</p>
-                    <p className="text-sm text-gray-500 mb-4">{file?.name}</p>
+                <div className="flex flex-col items-center w-full max-h-[70vh]">
+                  {/* Barre d'outils PDF */}
+                  <div className="flex items-center space-x-4 mb-4 bg-white px-4 py-2 rounded-lg shadow-sm">
                     <button
-                      onClick={handleDownload}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      onClick={zoomOut}
+                      disabled={scale <= 0.5}
+                      className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                      title="Zoom arrière"
                     >
-                      Télécharger le PDF
+                      <ZoomOut size={18} className="text-gray-600" />
                     </button>
+                    <span className="text-sm text-gray-600 min-w-[50px] text-center">
+                      {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                      onClick={zoomIn}
+                      disabled={scale >= 3.0}
+                      className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                      title="Zoom avant"
+                    >
+                      <ZoomIn size={18} className="text-gray-600" />
+                    </button>
+                    {numPages && (
+                      <>
+                        <span className="text-sm text-gray-400">|</span>
+                        <span className="text-sm text-gray-600">
+                          Page {pageNumber} sur {numPages}
+                        </span>
+                        <button
+                          onClick={previousPage}
+                          disabled={pageNumber <= 1}
+                          className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+                        >
+                          ← Précédent
+                        </button>
+                        <button
+                          onClick={nextPage}
+                          disabled={pageNumber >= numPages}
+                          className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded disabled:opacity-50"
+                        >
+                          Suivant →
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <div className="bg-white shadow-lg rounded-lg overflow-auto max-h-[60vh]">
+                    <Document
+                      file={previewUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                      loading={
+                        <div className="p-8 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                          <p className="text-gray-600">Chargement du PDF...</p>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                      />
+                    </Document>
                   </div>
                 </div>
               ) : isText ? (
@@ -410,7 +511,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
               </div>
             )}
             <div>
-              <span className="font-medium">Taille :</span> {(file?.size / 1024 / 1024).toFixed(2)} MB
+              <span className="font-medium">Taille :</span> {formatBytes(file?.size)}
             </div>
           </div>
         </div>

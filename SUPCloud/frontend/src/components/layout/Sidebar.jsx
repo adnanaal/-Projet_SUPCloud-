@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Folder, Trash2, Star, Clock, HardDrive, Settings as SettingsIcon, User } from 'lucide-react';
 import { toggleSidebar } from '../../store/uiSlice';
+import { formatBytes } from '../../utils/formatBytes';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -10,14 +11,6 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const { sidebarOpen } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
-
-  const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
 
   const storageUsed = user?.storageUsed ? Number(user.storageUsed) : 0;
   const storageLimit = user?.storageLimit ? Number(user.storageLimit) : 32212254720;

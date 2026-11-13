@@ -1,7 +1,10 @@
 import React from 'react';
-import { File, MoreVertical, Download, Trash2, Edit, Move } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { Eye, Download, Trash2, Edit, Move, MoreVertical } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
+import { fileService } from '../../services/fileService';
+import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
 
 const FileList = ({ files }) => {
   return (
@@ -45,30 +48,76 @@ const FileList = ({ files }) => {
 };
 
 const FileListItem = ({ file }) => {
+  const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
 
-  const handleDownload = () => {
-    // TODO: Implémenter le téléchargement
-    console.log('Download file:', file.id);
+  const handlePreview = () => {
+    dispatch(openFileViewerModal(file));
   };
 
-  const handleDelete = () => {
-    // TODO: Implémenter la suppression
-    console.log('Delete file:', file.id);
+  const handleDownload = async () => {
+    try {
+      const blob = await fileService.downloadFile(file.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      dispatch(addToast({
+        message: 'Fichier téléchargé avec succès',
+        type: 'success'
+      }));
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      dispatch(addToast({
+        message: 'Erreur lors du téléchargement',
+        type: 'error'
+      }));
+    }
+    setShowMenu(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir mettre ce fichier à la corbeille ?')) {
+      return;
+    }
+
+    try {
+      await fileService.deleteFile(file.id);
+      dispatch(addToast({
+        message: 'Fichier mis à la corbeille',
+        type: 'success'
+      }));
+      setShowMenu(false);
+      window.location.reload();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      dispatch(addToast({
+        message: 'Erreur lors de la suppression',
+        type: 'error'
+      }));
+    }
   };
 
   const handleRename = () => {
-    // TODO: Implémenter le renommage
-    console.log('Rename file:', file.id);
+    dispatch(openRenameModal({ item: file, type: 'file' }));
+    setShowMenu(false);
   };
 
   const handleMove = () => {
     // TODO: Implémenter le déplacement
     console.log('Move file:', file.id);
+    setShowMenu(false);
   };
 
   return (
-    <tr className="hover:bg-gray-50 group">
+    <tr
+      className="hover:bg-gray-50 group cursor-pointer"
+      onClick={handlePreview}
+    >
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="flex-shrink-0">
@@ -95,7 +144,10 @@ const FileListItem = ({ file }) => {
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="relative inline-block">
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
             className="p-1 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <MoreVertical size={16} className="text-gray-500" />
@@ -103,9 +155,19 @@ const FileListItem = ({ file }) => {
           {showMenu && (
             <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePreview();
+                }}
+                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <Eye size={16} className="mr-2" />
+                Prévisualiser
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleDownload();
-                  setShowMenu(false);
                 }}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -113,9 +175,9 @@ const FileListItem = ({ file }) => {
                 Télécharger
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleRename();
-                  setShowMenu(false);
                 }}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -123,9 +185,9 @@ const FileListItem = ({ file }) => {
                 Renommer
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleMove();
-                  setShowMenu(false);
                 }}
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
@@ -133,9 +195,9 @@ const FileListItem = ({ file }) => {
                 Déplacer
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleDelete();
-                  setShowMenu(false);
                 }}
                 className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
               >

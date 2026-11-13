@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import OAuthCallback from './pages/OAuthCallback';
 import HomePage from './pages/HomePage';
 import FilesPage from './pages/FilesPage';
+import FolderPage from './pages/FolderPage';
 import RecentsPage from './pages/RecentsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
@@ -39,6 +40,14 @@ function App() {
           element={
             <ProtectedRoute>
               <FilesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/folders/:id"
+          element={
+            <ProtectedRoute>
+              <FolderPage />
             </ProtectedRoute>
           }
         />
