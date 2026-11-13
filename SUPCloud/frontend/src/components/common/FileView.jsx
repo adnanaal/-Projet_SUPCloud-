@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Grid, List, SortAsc } from 'lucide-react';
+import { Grid, List, SortAsc, ArrowUp, ArrowDown } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import FileList from './FileList';
@@ -14,6 +14,9 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
   const [viewMode, setViewMode] = React.useState('grid'); // 'grid' or 'list'
   const [draggedItem, setDraggedItem] = React.useState(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState('name'); // 'name', 'type', 'date'
+  const [sortOrder, setSortOrder] = React.useState('asc'); // 'asc' or 'desc'
+  const [showSortMenu, setShowSortMenu] = React.useState(false);
 
   const handleDragStart = (item) => {
     setDraggedItem(item);
@@ -58,6 +61,54 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
     setDraggedItem(null);
   };
 
+  // Fonction de tri
+  const sortItems = (items, type) => {
+    return [...items].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'type':
+          if (type === 'file') {
+            comparison = (a.mimeType || '').localeCompare(b.mimeType || '');
+          } else {
+            comparison = a.name.localeCompare(b.name);
+          }
+          break;
+        case 'date':
+          comparison = new Date(a.updatedAt || a.createdAt) - new Date(b.updatedAt || b.createdAt);
+          break;
+        default:
+          comparison = a.name.localeCompare(b.name);
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const sortedFolders = sortItems(folders, 'folder');
+  const sortedFiles = sortItems(files, 'file');
+
+  const handleSortBy = (type) => {
+    setSortBy(type);
+    setShowSortMenu(false);
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const getSortLabel = () => {
+    switch (sortBy) {
+      case 'name': return 'Nom';
+      case 'type': return 'Type';
+      case 'date': return 'Date';
+      default: return 'Nom';
+    }
+  };
+
   return (
     <div
       onDragOver={handleDragOver}
@@ -91,22 +142,62 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
           </button>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="flex items-center space-x-2 px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-            <SortAsc size={16} />
-            <span className="text-sm">Trier</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              className="flex items-center space-x-2 px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <SortAsc size={16} />
+              <span className="text-sm">{getSortLabel()}</span>
+              {sortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+            </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                <button
+                  onClick={() => handleSortBy('name')}
+                  className={`w-full flex items-center px-3 py-2 text-sm ${
+                    sortBy === 'name' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>Nom</span>
+                </button>
+                <button
+                  onClick={() => handleSortBy('type')}
+                  className={`w-full flex items-center px-3 py-2 text-sm ${
+                    sortBy === 'type' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>Type</span>
+                </button>
+                <button
+                  onClick={() => handleSortBy('date')}
+                  className={`w-full flex items-center px-3 py-2 text-sm ${
+                    sortBy === 'date' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>Date</span>
+                </button>
+                <button
+                  onClick={toggleSortOrder}
+                  className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-100"
+                >
+                  <span>{sortOrder === 'asc' ? 'Ascendant' : 'Descendant'}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Affichage des dossiers */}
-      {folders.length > 0 && (
+      {sortedFolders.length > 0 && (
         <div className="mb-8">
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
             Dossiers
           </h3>
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {folders.map((folder) => (
+              {sortedFolders.map((folder) => (
                 <FolderCard
                   key={folder.id}
                   folder={folder}
@@ -123,14 +214,14 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
       )}
 
       {/* Affichage des fichiers */}
-      {files.length > 0 && (
+      {sortedFiles.length > 0 && (
         <div>
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
             Fichiers
           </h3>
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {files.map((file) => (
+              {sortedFiles.map((file) => (
                 <FileCard
                   key={file.id}
                   file={file}
@@ -141,7 +232,7 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
               ))}
             </div>
           ) : (
-            <FileList files={files} />
+            <FileList files={sortedFiles} />
           )}
         </div>
       )}
