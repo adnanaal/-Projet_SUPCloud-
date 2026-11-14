@@ -157,7 +157,7 @@ const FileView = ({
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
             Dossiers
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {sortedFolders.map((folder) => (
               <FolderCard
                 key={folder.id}
@@ -178,7 +178,7 @@ const FileView = ({
             Fichiers
           </h3>
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {sortedFiles.map((file) => (
                 <FileCard
                   key={file.id}

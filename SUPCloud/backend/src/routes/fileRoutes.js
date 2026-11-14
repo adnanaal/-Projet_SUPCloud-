@@ -8,6 +8,7 @@ const upload = require('../config/multer');
 router.post('/upload', authMiddleware, upload.single('file'), fileController.uploadFile);
 router.get('/', authMiddleware, fileController.getFiles);
 router.get('/recent', authMiddleware, fileController.getRecentFiles);
+router.get('/stats', authMiddleware, fileController.getStorageStats);
 router.get('/:id', authMiddleware, fileController.getFile);
 router.get('/:id/download', authMiddleware, fileController.downloadFile);
 router.put('/:id', authMiddleware, fileController.renameFile);

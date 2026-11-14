@@ -53,15 +53,14 @@ const FilesPage = () => {
   }, [dispatch]);
 
   const breadcrumbs = [
-    { label: 'Accueil', path: '/home' },
-    { label: 'Fichiers', path: '/files' },
+    { label: 'Mes fichiers', path: '/files' },
   ];
 
   return (
     <MainLayout>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Fichiers</h2>
-        <p className="text-gray-600">Tous vos fichiers et dossiers</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Mes fichiers</h2>
+        <p className="text-gray-600">Parcourez et organisez l'ensemble de vos fichiers et dossiers</p>
       </div>
 
       {/* FileView pour afficher les fichiers et dossiers */}

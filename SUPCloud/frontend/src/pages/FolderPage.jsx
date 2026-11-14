@@ -59,7 +59,7 @@ const FolderPage = () => {
   }, [id, dispatch]);
 
   const breadcrumbs = [
-    { label: 'Accueil', path: '/home' },
+    { label: 'Mes fichiers', path: '/files', isRoot: true },
     ...(folder?.ancestors || []).map((ancestor) => ({
       label: ancestor.name,
       path: `/folders/${ancestor.id}`,

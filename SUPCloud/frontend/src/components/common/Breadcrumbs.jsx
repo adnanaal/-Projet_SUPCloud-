@@ -46,22 +46,23 @@ const Breadcrumbs = ({ items = [] }) => {
 
   return (
     <nav className="flex items-center space-x-2 text-sm mb-6">
-      <DropZone enabled={insideFolder} targetFolderId={null}>
-        <button
-          onClick={() => navigate('/home')}
-          className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors"
-          title={insideFolder ? 'Accueil (déposez ici pour déplacer à la racine)' : 'Accueil'}
-        >
-          <Home size={16} />
-        </button>
-      </DropZone>
+      <button
+        onClick={() => navigate('/home')}
+        className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors"
+        title="Accueil"
+      >
+        <Home size={16} />
+      </button>
       {items.map((item, index) => (
         <React.Fragment key={index}>
           <ChevronRight size={16} className="text-gray-400" />
           {index === items.length - 1 ? (
             <span className="text-gray-900 font-medium">{item.label}</span>
           ) : (
-            <DropZone enabled={Boolean(item.folderId)} targetFolderId={item.folderId || null}>
+            <DropZone
+              enabled={item.isRoot ? insideFolder : Boolean(item.folderId)}
+              targetFolderId={item.folderId || null}
+            >
               <button
                 onClick={() => navigate(item.path)}
                 className="text-gray-500 hover:text-indigo-600 transition-colors"

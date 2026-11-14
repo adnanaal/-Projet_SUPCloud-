@@ -52,6 +52,12 @@ export const fileService = {
     return response.data;
   },
 
+  // Statistiques de stockage (nombre de fichiers/dossiers, répartition par type)
+  getStorageStats: async () => {
+    const response = await axios.get(`${API_URL}/stats`, getAuthHeader());
+    return response.data;
+  },
+
   // Récupérer un fichier par ID
   getFile: async (id) => {
     const response = await axios.get(`${API_URL}/${id}`, getAuthHeader());

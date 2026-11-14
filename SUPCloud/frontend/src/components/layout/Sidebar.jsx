@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Folder, Trash2, Clock, HardDrive, Settings as SettingsIcon, User } from 'lucide-react';
 import { toggleSidebar } from '../../store/uiSlice';
-import { formatBytes } from '../../utils/formatBytes';
+import { formatBytes, formatPercent } from '../../utils/formatBytes';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -15,12 +15,11 @@ const Sidebar = () => {
   const storageUsed = user?.storageUsed ? Number(user.storageUsed) : 0;
   const storageLimit = user?.storageLimit ? Number(user.storageLimit) : 32212254720;
   const storagePercentage = Math.min(100, (storageUsed / storageLimit) * 100);
-  const storagePercentageLabel =
-    storageUsed > 0 && storagePercentage < 0.01 ? '<0,01' : storagePercentage.toFixed(2).replace('.', ',');
+  const storagePercentageLabel = formatPercent(storageUsed, storageLimit);
 
   const navItems = [
     { path: '/home', icon: Home, label: 'Accueil' },
-    { path: '/files', icon: Folder, label: 'Fichiers' },
+    { path: '/files', icon: Folder, label: 'Mes fichiers' },
     { path: '/recents', icon: Clock, label: 'Récents' },
     { path: '/trash', icon: Trash2, label: 'Corbeille' },
     { path: '/profile', icon: User, label: 'Profil' },

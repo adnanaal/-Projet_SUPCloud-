@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { Eye, Download, Trash2, Edit, Move, MoreVertical } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, Download, Trash2, Edit, Move, MoreVertical, Folder } from 'lucide-react';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
@@ -8,29 +9,41 @@ import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSl
 import { removeFile } from '../../store/filesSlice';
 import { refreshUser } from '../../utils/refreshUser';
 
-const FileList = ({ files }) => {
+const FileList = ({ files, variant = 'default' }) => {
+  const isRecent = variant === 'recent';
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Nom
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Taille
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Modifié
-            </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
+      <table className={`divide-y divide-gray-200 ${isRecent ? 'w-full table-fixed' : 'min-w-full'}`}>
+        {isRecent ? (
+          <colgroup>
+            <col className="w-[40%]" />
+            <col className="w-[22%]" />
+            <col className="w-[20%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+          </colgroup>
+        ) : (
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Nom
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Taille
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Modifié
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+        )}
         <tbody className="bg-white divide-y divide-gray-200">
           {files.length === 0 ? (
             <tr>
@@ -40,7 +53,7 @@ const FileList = ({ files }) => {
             </tr>
           ) : (
             files.map((file) => (
-              <FileListItem key={file.id} file={file} />
+              <FileListItem key={file.id} file={file} variant={variant} />
             ))
           )}
         </tbody>
@@ -49,7 +62,9 @@ const FileList = ({ files }) => {
   );
 };
 
-const FileListItem = ({ file }) => {
+const FileListItem = ({ file, variant = 'default' }) => {
+  const isRecent = variant === 'recent';
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
 
@@ -132,24 +147,57 @@ const FileListItem = ({ file }) => {
           <div className="flex-shrink-0">
             <FileIcon type={file.mimeType} size={20} className="text-indigo-600" />
           </div>
-          <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={file.name}>
+          <div className="ml-4 min-w-0">
+            <div className={`text-sm font-medium text-gray-900 truncate ${isRecent ? '' : 'max-w-xs'}`} title={file.name}>
               {file.name}
             </div>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-500">{formatBytes(Number(file.size))}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-500">{file.mimeType}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-500">
-          {new Date(file.updatedAt).toLocaleDateString('fr-FR')}
-        </div>
-      </td>
+      {isRecent ? (
+        <>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(file.folder ? `/folders/${file.folder.id}` : '/files');
+              }}
+              className="flex items-center max-w-full text-sm text-gray-500 hover:text-indigo-600"
+              title={file.folder ? file.folder.name : 'Mes fichiers'}
+            >
+              <Folder size={16} className="mr-2 flex-shrink-0" />
+              <span className="truncate">{file.folder ? file.folder.name : 'Mes fichiers'}</span>
+            </button>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-500">
+              {new Date(file.updatedAt).toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-500">{formatBytes(Number(file.size))}</div>
+          </td>
+        </>
+      ) : (
+        <>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-500">{formatBytes(Number(file.size))}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-500">{file.mimeType}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-500">
+              {new Date(file.updatedAt).toLocaleDateString('fr-FR')}
+            </div>
+          </td>
+        </>
+      )}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="relative inline-block">
           <button

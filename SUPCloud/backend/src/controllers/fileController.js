@@ -171,11 +171,68 @@ const getRecentFiles = async (req, res, next) => {
     const files = await prisma.file.findMany({
       where: { userId: req.user.id, trashItemId: null },
       orderBy: { updatedAt: 'desc' },
-      take: 50,
+      take: 100,
+      include: { folder: { select: { id: true, name: true } } },
     });
 
     res.status(200).json({
       files: serializeBigInt(files),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const CATEGORY_KEYS = ['images', 'videos', 'audio', 'documents', 'archives', 'others'];
+
+/**
+ * Catégorie d'un fichier selon son type MIME
+ */
+const getCategory = (mimeType = '') => {
+  if (mimeType.startsWith('image/')) return 'images';
+  if (mimeType.startsWith('video/')) return 'videos';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  if (
+    mimeType === 'application/pdf' ||
+    mimeType.startsWith('text/') ||
+    mimeType === 'application/msword' ||
+    mimeType.startsWith('application/vnd.')
+  ) {
+    return 'documents';
+  }
+  if (/zip|rar|7z|tar|gzip/.test(mimeType)) return 'archives';
+  return 'others';
+};
+
+/**
+ * Statistiques de l'espace de l'utilisateur : nombre de fichiers/dossiers
+ * et répartition du stockage par catégorie
+ */
+const getStorageStats = async (req, res, next) => {
+  try {
+    const [groups, totalFolders] = await Promise.all([
+      prisma.file.groupBy({
+        by: ['mimeType'],
+        where: { userId: req.user.id, trashItemId: null },
+        _sum: { size: true },
+        _count: { _all: true },
+      }),
+      prisma.folder.count({ where: { userId: req.user.id, trashItemId: null } }),
+    ]);
+
+    const categories = Object.fromEntries(CATEGORY_KEYS.map((key) => [key, { key, count: 0, size: 0n }]));
+    for (const group of groups) {
+      const category = categories[getCategory(group.mimeType)];
+      category.count += group._count._all;
+      category.size += group._sum.size || 0n;
+    }
+
+    const categoryList = CATEGORY_KEYS.map((key) => categories[key]);
+
+    res.status(200).json({
+      totalFiles: categoryList.reduce((sum, category) => sum + category.count, 0),
+      totalFolders,
+      categories: serializeBigInt(categoryList),
     });
   } catch (error) {
     next(error);
@@ -368,6 +425,7 @@ module.exports = {
   getFile,
   getFiles,
   getRecentFiles,
+  getStorageStats,
   downloadFile,
   renameFile,
   moveFile,
