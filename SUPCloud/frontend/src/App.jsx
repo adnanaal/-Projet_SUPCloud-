@@ -9,7 +9,6 @@ import HomePage from './pages/HomePage';
 import FilesPage from './pages/FilesPage';
 import FolderPage from './pages/FolderPage';
 import RecentsPage from './pages/RecentsPage';
-import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
 import TrashPage from './pages/TrashPage';
 import SettingsPage from './pages/SettingsPage';
@@ -56,14 +55,6 @@ function App() {
           element={
             <ProtectedRoute>
               <RecentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/favorites"
-          element={
-            <ProtectedRoute>
-              <FavoritesPage />
             </ProtectedRoute>
           }
         />

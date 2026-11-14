@@ -2,13 +2,7 @@ const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 const serializeBigInt = require('../utils/serialize');
 const fs = require('fs');
-const path = require('path');
-
-/**
- * Résout le chemin physique d'un fichier (absolu ou relatif historique)
- */
-const resolveFilePath = (filePath) =>
-  path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', '..', filePath);
+const { resolveFilePath, getExpirationDate } = require('../utils/trash');
 
 /**
  * Formater les octets en unités lisibles
@@ -35,8 +29,8 @@ const uploadFile = async (req, res, next) => {
 
     // Vérifier si le dossier parent existe (si folderId est fourni)
     if (folderId) {
-      const folder = await prisma.folder.findUnique({
-        where: { id: folderId },
+      const folder = await prisma.folder.findFirst({
+        where: { id: folderId, trashItemId: null },
       });
 
       if (!folder) {
@@ -122,8 +116,8 @@ const getFile = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const file = await prisma.file.findUnique({
-      where: { id },
+    const file = await prisma.file.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!file) {
@@ -154,10 +148,30 @@ const getFiles = async (req, res, next) => {
       where: {
         userId: req.user.id,
         folderId: folderId || null,
+        trashItemId: null,
       },
       orderBy: {
         createdAt: 'desc',
       },
+    });
+
+    res.status(200).json({
+      files: serializeBigInt(files),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Récupérer les fichiers récents de l'utilisateur (tous dossiers confondus)
+ */
+const getRecentFiles = async (req, res, next) => {
+  try {
+    const files = await prisma.file.findMany({
+      where: { userId: req.user.id, trashItemId: null },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
     });
 
     res.status(200).json({
@@ -175,8 +189,8 @@ const downloadFile = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const file = await prisma.file.findUnique({
-      where: { id },
+    const file = await prisma.file.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!file) {
@@ -189,7 +203,13 @@ const downloadFile = async (req, res, next) => {
     }
 
     // Envoyer le fichier
-    res.download(file.path, file.name);
+    const physicalPath = resolveFilePath(file.path);
+
+    if (!fs.existsSync(physicalPath)) {
+      throw new AppError(404, 'Le fichier physique est introuvable sur le serveur', 'NotFoundError');
+    }
+
+    res.download(physicalPath, file.name);
   } catch (error) {
     next(error);
   }
@@ -209,8 +229,8 @@ const renameFile = async (req, res, next) => {
     }
 
     // Vérifier si le fichier existe
-    const file = await prisma.file.findUnique({
-      where: { id },
+    const file = await prisma.file.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!file) {
@@ -246,8 +266,8 @@ const moveFile = async (req, res, next) => {
     const { folderId } = req.body;
 
     // Vérifier si le fichier existe
-    const file = await prisma.file.findUnique({
-      where: { id },
+    const file = await prisma.file.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!file) {
@@ -261,8 +281,8 @@ const moveFile = async (req, res, next) => {
 
     // Si folderId est fourni, vérifier que le dossier existe
     if (folderId) {
-      const folder = await prisma.folder.findUnique({
-        where: { id: folderId },
+      const folder = await prisma.folder.findFirst({
+        where: { id: folderId, trashItemId: null },
       });
 
       if (!folder) {
@@ -298,8 +318,8 @@ const deleteFile = async (req, res, next) => {
     const { id } = req.params;
 
     // Récupérer le fichier avant suppression
-    const file = await prisma.file.findUnique({
-      where: { id },
+    const file = await prisma.file.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!file) {
@@ -311,41 +331,29 @@ const deleteFile = async (req, res, next) => {
       throw new AppError(403, 'Accès refusé', 'ForbiddenError');
     }
 
-    // Créer un élément dans la corbeille
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // Expiration dans 30 jours
-
-    await prisma.trashItem.create({
-      data: {
-        name: file.name,
-        type: 'file',
-        originalId: file.id,
-        userId: req.user.id,
-        expiresAt,
-      },
-    });
-
-    // Supprimer le fichier de la base de données
-    await prisma.file.delete({
-      where: { id },
-    });
-
-    // Libérer le quota utilisateur
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        storageUsed: {
-          decrement: file.size,
+    // Mettre le fichier à la corbeille (le fichier physique est conservé pour la restauration)
+    // et libérer le quota de façon atomique
+    await prisma.$transaction(async (tx) => {
+      const trashItem = await tx.trashItem.create({
+        data: {
+          name: file.name,
+          type: 'file',
+          originalId: file.id,
+          userId: req.user.id,
+          expiresAt: getExpirationDate(),
         },
-      },
+      });
+
+      await tx.file.update({
+        where: { id },
+        data: { trashItemId: trashItem.id },
+      });
+
+      await tx.user.update({
+        where: { id: req.user.id },
+        data: { storageUsed: { decrement: file.size } },
+      });
     });
-
-    // Supprimer le fichier physique du disque
-    const filePath = resolveFilePath(file.path);
-
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
 
     res.status(200).json({
       message: 'Fichier mis à la corbeille avec succès',
@@ -359,6 +367,7 @@ module.exports = {
   uploadFile,
   getFile,
   getFiles,
+  getRecentFiles,
   downloadFile,
   renameFile,
   moveFile,

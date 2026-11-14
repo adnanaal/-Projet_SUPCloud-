@@ -46,6 +46,12 @@ export const fileService = {
     return response.data;
   },
 
+  // Récupérer les fichiers récents (tous dossiers confondus)
+  getRecentFiles: async () => {
+    const response = await axios.get(`${API_URL}/recent`, getAuthHeader());
+    return response.data;
+  },
+
   // Récupérer un fichier par ID
   getFile: async (id) => {
     const response = await axios.get(`${API_URL}/${id}`, getAuthHeader());

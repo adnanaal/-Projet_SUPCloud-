@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import { trashService } from '../services/trashService';
 import { addToast } from '../store/uiSlice';
+import { refreshUser } from '../utils/refreshUser';
+import { formatBytes } from '../utils/formatBytes';
 import { File, Folder, Clock, Trash2 } from 'lucide-react';
 
 const TrashPage = () => {
@@ -15,7 +17,7 @@ const TrashPage = () => {
       setLoading(true);
       try {
         const data = await trashService.getTrashItems();
-        setTrashItems(data.items || []);
+        setTrashItems(data.trashItems || []);
       } catch (error) {
         console.error('Erreur lors du chargement de la corbeille:', error);
         dispatch(addToast({
@@ -52,14 +54,15 @@ const TrashPage = () => {
 
   const handleRestore = async (id) => {
     try {
-      await trashService.restoreTrashItem(id);
+      const result = await trashService.restoreTrashItem(id);
       dispatch(addToast({
-        message: 'Élément restauré avec succès',
+        message: result.message || 'Élément restauré avec succès',
         type: 'success'
       }));
+      refreshUser(dispatch);
       // Recharger la liste
       const data = await trashService.getTrashItems();
-      setTrashItems(data.items || []);
+      setTrashItems(data.trashItems || []);
     } catch (error) {
       console.error('Erreur lors de la restauration:', error);
       dispatch(addToast({
@@ -82,7 +85,7 @@ const TrashPage = () => {
       }));
       // Recharger la liste
       const data = await trashService.getTrashItems();
-      setTrashItems(data.items || []);
+      setTrashItems(data.trashItems || []);
     } catch (error) {
       console.error('Erreur lors de la suppression définitive:', error);
       dispatch(addToast({
@@ -92,11 +95,39 @@ const TrashPage = () => {
     }
   };
 
+  const handleEmptyTrash = async () => {
+    if (!window.confirm('Vider la corbeille ? Tous les éléments seront supprimés définitivement. Cette action est irréversible.')) {
+      return;
+    }
+
+    try {
+      await trashService.emptyTrash();
+      dispatch(addToast({ message: 'Corbeille vidée avec succès', type: 'success' }));
+      setTrashItems([]);
+    } catch (error) {
+      console.error('Erreur lors du vidage de la corbeille:', error);
+      dispatch(addToast({
+        message: error.response?.data?.message || 'Erreur lors du vidage de la corbeille',
+        type: 'error'
+      }));
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Corbeille</h2>
-        <p className="text-gray-600">Les éléments sont supprimés définitivement après 30 jours</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Corbeille</h2>
+          <p className="text-gray-600">Les éléments sont supprimés définitivement après 30 jours</p>
+        </div>
+        {trashItems.length > 0 && (
+          <button
+            onClick={handleEmptyTrash}
+            className="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            Vider la corbeille
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -139,7 +170,12 @@ const TrashPage = () => {
                         ) : (
                           <Folder className="h-5 w-5 text-gray-400" />
                         )}
-                        <span className="font-medium text-gray-900">{item.name}</span>
+                        <div className="min-w-0">
+                          <span className="block font-medium text-gray-900 truncate max-w-xs" title={item.name}>{item.name}</span>
+                          {item.type === 'file' && item.size != null && (
+                            <span className="block text-xs text-gray-500">{formatBytes(item.size)}</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">

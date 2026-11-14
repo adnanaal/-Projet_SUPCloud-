@@ -60,7 +60,12 @@ const FolderPage = () => {
 
   const breadcrumbs = [
     { label: 'Accueil', path: '/home' },
-    { label: folder?.name || 'Dossier', path: `/folders/${id}` },
+    ...(folder?.ancestors || []).map((ancestor) => ({
+      label: ancestor.name,
+      path: `/folders/${ancestor.id}`,
+      folderId: ancestor.id,
+    })),
+    { label: folder?.name || 'Dossier', path: `/folders/${id}`, folderId: id },
   ];
 
   return (

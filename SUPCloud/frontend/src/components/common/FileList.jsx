@@ -5,6 +5,8 @@ import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
 import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
+import { removeFile } from '../../store/filesSlice';
+import { refreshUser } from '../../utils/refreshUser';
 
 const FileList = ({ files }) => {
   return (
@@ -87,16 +89,17 @@ const FileListItem = ({ file }) => {
 
     try {
       await fileService.deleteFile(file.id);
+      dispatch(removeFile(file.id));
       dispatch(addToast({
         message: 'Fichier mis à la corbeille',
         type: 'success'
       }));
       setShowMenu(false);
-      window.location.reload();
+      refreshUser(dispatch);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       dispatch(addToast({
-        message: 'Erreur lors de la suppression',
+        message: error.response?.data?.message || 'Erreur lors de la suppression',
         type: 'error'
       }));
     }
@@ -117,6 +120,12 @@ const FileListItem = ({ file }) => {
     <tr
       className="hover:bg-gray-50 group cursor-pointer"
       onClick={handlePreview}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('type', 'file');
+        e.dataTransfer.setData('id', file.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
     >
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">

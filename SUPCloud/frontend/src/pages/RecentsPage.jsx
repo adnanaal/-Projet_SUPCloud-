@@ -2,29 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import MainLayout from '../components/layout/MainLayout';
 import FileView from '../components/common/FileView';
-import { setFiles, setLoading, setError } from '../store/filesSlice';
+import RenameModal from '../components/common/RenameModal';
+import FileViewerModal from '../components/common/FileViewerModal';
+import { setFiles, setError } from '../store/filesSlice';
 import { fileService } from '../services/fileService';
+import { refreshUser } from '../utils/refreshUser';
+import { closeRenameModal, closeFileViewerModal, openFileViewerModal } from '../store/uiSlice';
 
 const RecentsPage = () => {
   const dispatch = useDispatch();
-  const { files, loading } = useSelector((state) => state.files);
+  const { files } = useSelector((state) => state.files);
+  const { renameModalOpen, fileViewerModalOpen, selectedItem, itemType } = useSelector((state) => state.ui);
+  const [loading, setLoading] = useState(false);
 
-  // Charger les fichiers récents (tous les fichiers triés par date)
+  // Charger les fichiers récents (tous dossiers confondus, triés par date de modification)
   useEffect(() => {
     const loadRecentFiles = async () => {
-      dispatch(setLoading(true));
+      setLoading(true);
       try {
-        const filesData = await fileService.getFiles();
-        // Trier par date de modification décroissante
-        const sortedFiles = (filesData.files || []).sort((a, b) => 
-          new Date(b.updatedAt) - new Date(a.updatedAt)
-        );
-        dispatch(setFiles(sortedFiles));
+        const filesData = await fileService.getRecentFiles();
+        dispatch(setFiles(filesData.files || []));
+        await refreshUser(dispatch);
       } catch (error) {
         console.error('Erreur lors du chargement des fichiers récents:', error);
         dispatch(setError('Erreur lors du chargement des fichiers récents'));
       } finally {
-        dispatch(setLoading(false));
+        setLoading(false);
       }
     };
 
@@ -56,8 +59,28 @@ const RecentsPage = () => {
           files={files}
           currentFolder={null}
           breadcrumbs={breadcrumbs}
+          defaultSortBy="date"
+          defaultSortOrder="desc"
+          emptyMessage="Aucun fichier récent"
         />
       )}
+
+      {/* Modal de renommage */}
+      <RenameModal
+        isOpen={renameModalOpen}
+        onClose={() => dispatch(closeRenameModal())}
+        item={selectedItem}
+        itemType={itemType}
+      />
+
+      {/* Modal de visionneuse de fichiers */}
+      <FileViewerModal
+        isOpen={fileViewerModalOpen}
+        onClose={() => dispatch(closeFileViewerModal())}
+        file={selectedItem}
+        files={files}
+        onNavigate={(file) => dispatch(openFileViewerModal(file))}
+      />
     </MainLayout>
   );
 };

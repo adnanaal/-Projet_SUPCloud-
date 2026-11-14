@@ -1,21 +1,23 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { Grid, List, SortAsc, ArrowUp, ArrowDown } from 'lucide-react';
 import FileCard from './FileCard';
 import FolderCard from './FolderCard';
 import FileList from './FileList';
 import Breadcrumbs from './Breadcrumbs';
-import { fileService } from '../../services/fileService';
-import { folderService } from '../../services/folderService';
-import { addToast } from '../../store/uiSlice';
 
-const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs = [] }) => {
-  const dispatch = useDispatch();
+const FileView = ({
+  folders = [],
+  files = [],
+  currentFolder = null,
+  breadcrumbs = [],
+  defaultSortBy = 'name',
+  defaultSortOrder = 'asc',
+  emptyMessage = 'Ce dossier est vide',
+}) => {
   const [viewMode, setViewMode] = React.useState('grid'); // 'grid' or 'list'
   const [draggedItem, setDraggedItem] = React.useState(null);
-  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
-  const [sortBy, setSortBy] = React.useState('name'); // 'name', 'type', 'date'
-  const [sortOrder, setSortOrder] = React.useState('asc'); // 'asc' or 'desc'
+  const [sortBy, setSortBy] = React.useState(defaultSortBy); // 'name', 'type', 'date'
+  const [sortOrder, setSortOrder] = React.useState(defaultSortOrder); // 'asc' or 'desc'
   const [showSortMenu, setShowSortMenu] = React.useState(false);
 
   const handleDragStart = (item) => {
@@ -23,41 +25,6 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
   };
 
   const handleDragEnd = () => {
-    setDraggedItem(null);
-    setIsDraggingOver(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDraggingOver(false);
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-
-    if (!draggedItem) return;
-
-    const type = e.dataTransfer.getData('type');
-    const id = e.dataTransfer.getData('id');
-
-    try {
-      if (type === 'file') {
-        await fileService.moveFile(id, currentFolder?.id || null);
-        dispatch(addToast({ message: 'Fichier déplacé avec succès', type: 'success' }));
-      } else if (type === 'folder') {
-        await folderService.moveFolder(id, currentFolder?.id || null);
-        dispatch(addToast({ message: 'Dossier déplacé avec succès', type: 'success' }));
-      }
-    } catch (error) {
-      console.error('Erreur lors du déplacement:', error);
-      dispatch(addToast({ message: 'Erreur lors du déplacement', type: 'error' }));
-    }
-
     setDraggedItem(null);
   };
 
@@ -110,12 +77,7 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
   };
 
   return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className={`transition-colors ${isDraggingOver ? 'bg-indigo-50' : ''}`}
-    >
+    <div>
       {/* Breadcrumbs */}
       <Breadcrumbs items={breadcrumbs} />
 
@@ -195,21 +157,17 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
             Dossiers
           </h3>
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {sortedFolders.map((folder) => (
-                <FolderCard
-                  key={folder.id}
-                  folder={folder}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  isDragging={draggedItem?.id === folder.id}
-                />
-              ))}
-            </div>
-          ) : (
-            <FileList files={[]} />
-          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {sortedFolders.map((folder) => (
+              <FolderCard
+                key={folder.id}
+                folder={folder}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                isDragging={draggedItem?.id === folder.id}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -255,7 +213,7 @@ const FileView = ({ folders = [], files = [], currentFolder = null, breadcrumbs 
               />
             </svg>
           </div>
-          <p className="text-gray-600 mb-2">Ce dossier est vide</p>
+          <p className="text-gray-600 mb-2">{emptyMessage}</p>
           <p className="text-sm text-gray-500">
             Uploadez des fichiers ou créez des dossiers pour commencer
           </p>

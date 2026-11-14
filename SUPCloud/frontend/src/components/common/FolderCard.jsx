@@ -4,11 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Folder, MoreVertical, Edit, Move, Trash2, Download } from 'lucide-react';
 import { folderService } from '../../services/folderService';
 import { addToast, openRenameModal } from '../../store/uiSlice';
+import { removeFolder } from '../../store/foldersSlice';
+import { refreshUser } from '../../utils/refreshUser';
+import { getDraggedItem, isSupCloudDrag, moveItemToFolder } from '../../utils/moveItem';
 
 const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showMenu, setShowMenu] = React.useState(false);
+  const [isDropTarget, setIsDropTarget] = React.useState(false);
 
   const handleClick = () => {
     navigate(`/folders/${folder.id}`);
@@ -55,16 +59,17 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
 
     try {
       await folderService.deleteFolder(folder.id);
+      dispatch(removeFolder(folder.id));
       dispatch(addToast({
         message: 'Dossier mis à la corbeille',
         type: 'success'
       }));
       setShowMenu(false);
-      window.location.reload(); // Recharger pour voir le changement
+      refreshUser(dispatch);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       dispatch(addToast({
-        message: 'Erreur lors de la suppression',
+        message: error.response?.data?.message || 'Erreur lors de la suppression',
         type: 'error'
       }));
     }
@@ -81,21 +86,51 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
     if (onDragEnd) onDragEnd();
   };
 
+  // Ce dossier est une cible de dépôt : on y déplace le fichier/dossier glissé
+  const handleDragOver = (e) => {
+    if (isDragging || !isSupCloudDrag(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDropTarget(true);
+  };
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDropTarget(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropTarget(false);
+
+    const item = getDraggedItem(e);
+    if (!item) return;
+
+    await moveItemToFolder(dispatch, item, folder.id);
+    if (onDragEnd) onDragEnd();
+  };
+
   return (
     <div
       onClick={handleClick}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group ${
-        isDragging ? 'opacity-50 scale-95' : ''
-      }`}
+      className={`bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer group min-w-0 ${
+        isDropTarget ? 'border-indigo-500 ring-2 ring-indigo-300 bg-indigo-50' : 'border-gray-200'
+      } ${isDragging ? 'opacity-50 scale-95' : ''}`}
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-indigo-50 rounded-lg">
+              <div className="p-2 bg-indigo-50 rounded-lg flex-shrink-0">
                 <Folder size={32} className="text-indigo-600" />
               </div>
               <div className="flex-1 min-w-0">
@@ -106,7 +141,7 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
               </div>
             </div>
           </div>
-          <div className="relative">
+          <div className="relative flex-shrink-0 ml-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();

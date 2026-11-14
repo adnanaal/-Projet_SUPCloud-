@@ -4,12 +4,21 @@ const serializeBigInt = require('../utils/serialize');
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
+const { resolveFilePath, collectFolderTreeIds, sumSizes, getExpirationDate } = require('../utils/trash');
 
 /**
- * Résout le chemin physique d'un fichier (absolu ou relatif historique)
+ * Vérifie qu'un dossier ne serait pas déplacé dans lui-même ou dans l'un de ses descendants
  */
-const resolveFilePath = (filePath) =>
-  path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', '..', filePath);
+const assertNotMovedIntoItself = async (folderId, targetParentId) => {
+  let currentId = targetParentId;
+  while (currentId) {
+    if (currentId === folderId) {
+      throw new AppError(400, "Un dossier ne peut pas être déplacé dans lui-même ou dans l'un de ses sous-dossiers", 'ValidationError');
+    }
+    const current = await prisma.folder.findUnique({ where: { id: currentId }, select: { parentId: true } });
+    currentId = current ? current.parentId : null;
+  }
+};
 
 /**
  * Créer un nouveau dossier
@@ -25,8 +34,8 @@ const createFolder = async (req, res, next) => {
 
     // Vérifier si le dossier parent existe (si parentId est fourni)
     if (parentId) {
-      const parentFolder = await prisma.folder.findUnique({
-        where: { id: parentId },
+      const parentFolder = await prisma.folder.findFirst({
+        where: { id: parentId, trashItemId: null },
       });
 
       if (!parentFolder) {
@@ -47,7 +56,7 @@ const createFolder = async (req, res, next) => {
         userId: req.user.id,
       },
       include: {
-        files: true,
+        files: { where: { trashItemId: null } },
       },
     });
 
@@ -67,11 +76,11 @@ const getFolder = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const folder = await prisma.folder.findUnique({
-      where: { id },
+    const folder = await prisma.folder.findFirst({
+      where: { id, trashItemId: null },
       include: {
-        files: true,
-        children: true,
+        files: { where: { trashItemId: null } },
+        children: { where: { trashItemId: null } },
       },
     });
 
@@ -84,8 +93,21 @@ const getFolder = async (req, res, next) => {
       throw new AppError(403, 'Accès refusé', 'ForbiddenError');
     }
 
+    // Chaîne des dossiers parents (de la racine jusqu'au parent direct) pour le fil d'Ariane
+    const ancestors = [];
+    let currentParentId = folder.parentId;
+    while (currentParentId) {
+      const parent = await prisma.folder.findFirst({
+        where: { id: currentParentId, trashItemId: null },
+        select: { id: true, name: true, parentId: true },
+      });
+      if (!parent) break;
+      ancestors.unshift({ id: parent.id, name: parent.name });
+      currentParentId = parent.parentId;
+    }
+
     res.status(200).json({
-      folder: serializeBigInt(folder),
+      folder: { ...serializeBigInt(folder), ancestors },
     });
   } catch (error) {
     next(error);
@@ -103,10 +125,11 @@ const getFolders = async (req, res, next) => {
       where: {
         userId: req.user.id,
         parentId: parentId || null,
+        trashItemId: null,
       },
       include: {
-        files: true,
-        children: true,
+        files: { where: { trashItemId: null } },
+        children: { where: { trashItemId: null } },
       },
       orderBy: {
         createdAt: 'desc',
@@ -130,8 +153,8 @@ const updateFolder = async (req, res, next) => {
     const { name, parentId } = req.body;
 
     // Vérifier si le dossier existe
-    const existingFolder = await prisma.folder.findUnique({
-      where: { id },
+    const existingFolder = await prisma.folder.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!existingFolder) {
@@ -145,8 +168,8 @@ const updateFolder = async (req, res, next) => {
 
     // Si on change le parent, vérifier que le nouveau parent existe
     if (parentId && parentId !== existingFolder.parentId) {
-      const parentFolder = await prisma.folder.findUnique({
-        where: { id: parentId },
+      const parentFolder = await prisma.folder.findFirst({
+        where: { id: parentId, trashItemId: null },
       });
 
       if (!parentFolder) {
@@ -158,10 +181,8 @@ const updateFolder = async (req, res, next) => {
         throw new AppError(403, 'Accès refusé au dossier parent', 'ForbiddenError');
       }
 
-      // Empêcher de mettre un dossier comme son propre parent
-      if (parentId === id) {
-        throw new AppError(400, 'Un dossier ne peut pas être son propre parent', 'ValidationError');
-      }
+      // Empêcher les cycles (dossier déplacé dans lui-même ou un descendant)
+      await assertNotMovedIntoItself(id, parentId);
     }
 
     // Mettre à jour le dossier
@@ -172,8 +193,8 @@ const updateFolder = async (req, res, next) => {
         ...(parentId !== undefined && { parentId: parentId || null }),
       },
       include: {
-        files: true,
-        children: true,
+        files: { where: { trashItemId: null } },
+        children: { where: { trashItemId: null } },
       },
     });
 
@@ -195,8 +216,8 @@ const moveFolder = async (req, res, next) => {
     const { parentId } = req.body;
 
     // Vérifier si le dossier existe
-    const existingFolder = await prisma.folder.findUnique({
-      where: { id },
+    const existingFolder = await prisma.folder.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!existingFolder) {
@@ -210,8 +231,8 @@ const moveFolder = async (req, res, next) => {
 
     // Si parentId est fourni, vérifier que le nouveau parent existe
     if (parentId) {
-      const parentFolder = await prisma.folder.findUnique({
-        where: { id: parentId },
+      const parentFolder = await prisma.folder.findFirst({
+        where: { id: parentId, trashItemId: null },
       });
 
       if (!parentFolder) {
@@ -223,10 +244,8 @@ const moveFolder = async (req, res, next) => {
         throw new AppError(403, 'Accès refusé au dossier parent', 'ForbiddenError');
       }
 
-      // Empêcher de mettre un dossier comme son propre parent
-      if (parentId === id) {
-        throw new AppError(400, 'Un dossier ne peut pas être son propre parent', 'ValidationError');
-      }
+      // Empêcher les cycles (dossier déplacé dans lui-même ou un descendant)
+      await assertNotMovedIntoItself(id, parentId);
     }
 
     // Mettre à jour le dossier parent
@@ -236,8 +255,8 @@ const moveFolder = async (req, res, next) => {
         parentId: parentId || null,
       },
       include: {
-        files: true,
-        children: true,
+        files: { where: { trashItemId: null } },
+        children: { where: { trashItemId: null } },
       },
     });
 
@@ -258,11 +277,8 @@ const deleteFolder = async (req, res, next) => {
     const { id } = req.params;
 
     // Vérifier si le dossier existe
-    const folder = await prisma.folder.findUnique({
-      where: { id },
-      include: {
-        files: true,
-      },
+    const folder = await prisma.folder.findFirst({
+      where: { id, trashItemId: null },
     });
 
     if (!folder) {
@@ -274,45 +290,41 @@ const deleteFolder = async (req, res, next) => {
       throw new AppError(403, 'Accès refusé', 'ForbiddenError');
     }
 
-    // Créer un élément dans la corbeille
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // Expiration dans 30 jours
+    // Dossier + sous-dossiers actifs (ceux déjà en corbeille gardent leur propre entrée)
+    const folderIds = await collectFolderTreeIds(id, { onlyActive: true });
 
-    await prisma.trashItem.create({
-      data: {
-        name: folder.name,
-        type: 'folder',
-        originalId: folder.id,
-        userId: req.user.id,
-        expiresAt,
-      },
+    const files = await prisma.file.findMany({
+      where: { folderId: { in: folderIds }, trashItemId: null },
     });
+    const totalSize = sumSizes(files);
 
-    // Libérer le quota utilisateur pour tous les fichiers du dossier
-    const totalSize = folder.files.reduce((sum, file) => sum + file.size, 0n);
-    
-    if (totalSize > 0n) {
-      await prisma.user.update({
-        where: { id: req.user.id },
+    // Mettre toute l'arborescence à la corbeille (les fichiers physiques sont conservés
+    // pour la restauration) et libérer le quota de façon atomique
+    await prisma.$transaction(async (tx) => {
+      const trashItem = await tx.trashItem.create({
         data: {
-          storageUsed: {
-            decrement: totalSize,
-          },
+          name: folder.name,
+          type: 'folder',
+          originalId: folder.id,
+          userId: req.user.id,
+          expiresAt: getExpirationDate(),
         },
       });
-    }
 
-    // Supprimer les fichiers physiques du disque
-    for (const file of folder.files) {
-      const filePath = resolveFilePath(file.path);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+      await tx.folder.updateMany({
+        where: { id: { in: folderIds } },
+        data: { trashItemId: trashItem.id },
+      });
 
-    // Supprimer le dossier (Prisma supprimera automatiquement les fichiers grâce à onDelete: Cascade)
-    await prisma.folder.delete({
-      where: { id },
+      await tx.file.updateMany({
+        where: { folderId: { in: folderIds }, trashItemId: null },
+        data: { trashItemId: trashItem.id },
+      });
+
+      await tx.user.update({
+        where: { id: req.user.id },
+        data: { storageUsed: { decrement: totalSize } },
+      });
     });
 
     res.status(200).json({
@@ -331,13 +343,14 @@ const downloadFolder = async (req, res, next) => {
     const { id } = req.params;
 
     // Récupérer le dossier
-    const folder = await prisma.folder.findUnique({
-      where: { id },
+    const folder = await prisma.folder.findFirst({
+      where: { id, trashItemId: null },
       include: {
-        files: true,
+        files: { where: { trashItemId: null } },
         children: {
+          where: { trashItemId: null },
           include: {
-            files: true,
+            files: { where: { trashItemId: null } },
           },
         },
       },
@@ -383,10 +396,11 @@ const downloadFolder = async (req, res, next) => {
         const childWithData = await prisma.folder.findUnique({
           where: { id: childFolder.id },
           include: {
-            files: true,
+            files: { where: { trashItemId: null } },
             children: {
+              where: { trashItemId: null },
               include: {
-                files: true,
+                files: { where: { trashItemId: null } },
               },
             },
           },

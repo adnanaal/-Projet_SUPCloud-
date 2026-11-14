@@ -32,34 +32,38 @@ model User {
 }
 
 model Folder {
-  id        String   @id @default(uuid())
-  name      String
-  parentId  String?
-  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[] @relation("FolderHierarchy")
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  parentId     String?
+  parent       Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Folder[] @relation("FolderHierarchy")
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trashItemId  String?  // Renseigné quand le dossier est dans la corbeille
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  files     File[]
+  files        File[]
 
+  @@index([trashItemId])
   @@map("folders")
 }
 
 model File {
-  id          String   @id @default(uuid())
-  name        String
-  size        BigInt
-  mimeType    String
-  path        String
-  folderId    String?
-  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  size         BigInt
+  mimeType     String
+  path         String
+  folderId     String?
+  folder       Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trashItemId  String?  // Renseigné quand le fichier est dans la corbeille
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  @@index([trashItemId])
   @@map("files")
 }
 

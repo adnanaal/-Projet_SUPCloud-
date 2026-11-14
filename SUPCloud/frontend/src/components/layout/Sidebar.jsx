@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Folder, Trash2, Star, Clock, HardDrive, Settings as SettingsIcon, User } from 'lucide-react';
+import { Home, Folder, Trash2, Clock, HardDrive, Settings as SettingsIcon, User } from 'lucide-react';
 import { toggleSidebar } from '../../store/uiSlice';
 import { formatBytes } from '../../utils/formatBytes';
 
@@ -15,12 +15,13 @@ const Sidebar = () => {
   const storageUsed = user?.storageUsed ? Number(user.storageUsed) : 0;
   const storageLimit = user?.storageLimit ? Number(user.storageLimit) : 32212254720;
   const storagePercentage = Math.min(100, (storageUsed / storageLimit) * 100);
+  const storagePercentageLabel =
+    storageUsed > 0 && storagePercentage < 0.01 ? '<0,01' : storagePercentage.toFixed(2).replace('.', ',');
 
   const navItems = [
     { path: '/home', icon: Home, label: 'Accueil' },
     { path: '/files', icon: Folder, label: 'Fichiers' },
     { path: '/recents', icon: Clock, label: 'Récents' },
-    { path: '/favorites', icon: Star, label: 'Favoris' },
     { path: '/trash', icon: Trash2, label: 'Corbeille' },
     { path: '/profile', icon: User, label: 'Profil' },
     { path: '/settings', icon: SettingsIcon, label: 'Paramètres' },
@@ -64,12 +65,12 @@ const Sidebar = () => {
             <HardDrive className="h-4 w-4 mr-1" />
             Stockage
           </span>
-          <span>{storagePercentage.toFixed(0)}%</span>
+          <span>{storagePercentageLabel}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${storagePercentage}%` }}
+            style={{ width: `${storageUsed > 0 ? Math.max(storagePercentage, 0.5) : 0}%` }}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">

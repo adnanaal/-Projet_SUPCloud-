@@ -6,6 +6,8 @@ import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
 import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
+import { removeFile } from '../../store/filesSlice';
+import { refreshUser } from '../../utils/refreshUser';
 
 const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
@@ -44,16 +46,17 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
 
     try {
       await fileService.deleteFile(file.id);
+      dispatch(removeFile(file.id));
       dispatch(addToast({
         message: 'Fichier mis à la corbeille',
         type: 'success'
       }));
       setShowMenu(false);
-      window.location.reload(); // Recharger pour voir le changement
+      refreshUser(dispatch);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       dispatch(addToast({
-        message: 'Erreur lors de la suppression',
+        message: error.response?.data?.message || 'Erreur lors de la suppression',
         type: 'error'
       }));
     }
@@ -85,7 +88,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group ${
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group min-w-0 ${
         isDragging ? 'opacity-50 scale-95' : ''
       }`}
       draggable
@@ -95,9 +98,9 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
     >
       <div className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-indigo-50 rounded-lg">
+              <div className="p-2 bg-indigo-50 rounded-lg flex-shrink-0">
                 <FileIcon type={file.mimeType} size={32} className="text-indigo-600" />
               </div>
               <div className="flex-1 min-w-0">
@@ -110,7 +113,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
               </div>
             </div>
           </div>
-          <div className="relative">
+          <div className="relative flex-shrink-0 ml-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();

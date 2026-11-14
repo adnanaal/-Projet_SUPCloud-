@@ -341,63 +341,6 @@ const ProfilePage = () => {
           )}
         </div>
 
-        {/* Connexions OAuth2 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Connexions OAuth2</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-red-500 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">G</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Google</p>
-                  <p className="text-sm text-gray-500">
-                    {user?.googleId ? 'Connecté' : 'Non connecté'}
-                  </p>
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${user?.googleId ? 'text-green-600' : 'text-gray-500'}`}>
-                {user?.googleId ? 'Actif' : 'Inactif'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-gray-800 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">GH</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">GitHub</p>
-                  <p className="text-sm text-gray-500">
-                    {user?.githubId ? 'Connecté' : 'Non connecté'}
-                  </p>
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${user?.githubId ? 'text-green-600' : 'text-gray-500'}`}>
-                {user?.githubId ? 'Actif' : 'Inactif'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-blue-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Microsoft</p>
-                  <p className="text-sm text-gray-500">
-                    {user?.microsoftId ? 'Connecté' : 'Non connecté'}
-                  </p>
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${user?.microsoftId ? 'text-green-600' : 'text-gray-500'}`}>
-                {user?.microsoftId ? 'Actif' : 'Inactif'}
-              </span>
-            </div>
-          </div>
-        </div>
-
         {/* Zone de danger */}
         <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6">
           <h3 className="text-lg font-semibold text-red-600 mb-4">Zone de danger</h3>
