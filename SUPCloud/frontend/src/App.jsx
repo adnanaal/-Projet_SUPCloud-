@@ -9,7 +9,6 @@ import HomePage from './pages/HomePage';
 import FilesPage from './pages/FilesPage';
 import FolderPage from './pages/FolderPage';
 import RecentsPage from './pages/RecentsPage';
-import ProfilePage from './pages/ProfilePage';
 import TrashPage from './pages/TrashPage';
 import SettingsPage from './pages/SettingsPage';
 
@@ -58,14 +57,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/profile" element={<Navigate to="/settings" replace />} />
         <Route
           path="/trash"
           element={

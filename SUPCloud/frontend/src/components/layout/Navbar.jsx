@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, LogOut } from 'lucide-react';
+import { Search, User, LogOut, Settings } from 'lucide-react';
 import { logout } from '../../store/authSlice';
 
 const Navbar = () => {
@@ -19,8 +19,8 @@ const Navbar = () => {
     setShowUserMenu(false);
   };
 
-  const handleProfile = () => {
-    navigate('/profile');
+  const handleSettings = () => {
+    navigate('/settings');
     setShowUserMenu(false);
   };
 
@@ -91,11 +91,11 @@ const Navbar = () => {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <button
-                  onClick={handleProfile}
+                  onClick={handleSettings}
                   className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <User className="h-5 w-5 mr-3" />
-                  <span>Profil</span>
+                  <Settings className="h-5 w-5 mr-3" />
+                  <span>Paramètres</span>
                 </button>
                 <button
                   onClick={handleLogout}

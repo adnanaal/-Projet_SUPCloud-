@@ -1,21 +1,31 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload as UploadIcon, FileText } from 'lucide-react';
+import { X, Upload as UploadIcon, FileText, AlertCircle } from 'lucide-react';
 import { fileService } from '../../services/fileService';
 import { addToast } from '../../store/uiSlice';
+import { formatBytes } from '../../utils/formatBytes';
 import { useDispatch } from 'react-redux';
+
+// Identifiant d'un fichier sélectionné (le nom seul peut être en double)
+const fileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
 
 const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
+  const needsRefreshRef = useRef(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadErrors, setUploadErrors] = useState({});
 
   if (!isOpen) return null;
 
+  const addFiles = (files) => {
+    setSelectedFiles((current) => [...current, ...files]);
+  };
+
   const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles([...selectedFiles, ...files]);
+    addFiles(Array.from(e.target.files));
+    e.target.value = '';
   };
 
   const handleDragOver = (e) => {
@@ -26,13 +36,28 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const files = Array.from(e.dataTransfer.files);
-    setSelectedFiles([...selectedFiles, ...files]);
+    addFiles(Array.from(e.dataTransfer.files));
   };
 
   const handleRemoveFile = (index) => {
-    const newFiles = selectedFiles.filter((_, i) => i !== index);
-    setSelectedFiles(newFiles);
+    setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+  };
+
+  const resetState = () => {
+    setSelectedFiles([]);
+    setUploadProgress({});
+    setUploadErrors({});
+  };
+
+  // Fermer la fenêtre ; recharger la page si des fichiers ont été envoyés pour les afficher
+  const handleClose = () => {
+    const needsRefresh = needsRefreshRef.current;
+    needsRefreshRef.current = false;
+    resetState();
+    onClose();
+    if (needsRefresh) {
+      window.location.reload();
+    }
   };
 
   const handleUpload = async () => {
@@ -40,57 +65,53 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
 
     setUploading(true);
     setUploadProgress({});
+    setUploadErrors({});
 
+    const failed = [];
+    const errors = {};
     let successCount = 0;
 
-    try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
+    for (const file of selectedFiles) {
+      const key = fileKey(file);
 
-        try {
-          await fileService.uploadFile(file, currentFolderId, (percent) => {
-            setUploadProgress((prev) => ({ ...prev, [file.name]: percent }));
-          });
-          successCount++;
-          setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }));
-        } catch (error) {
-          console.error(`Erreur lors de l'upload de ${file.name}:`, error);
-          const backendMessage = error.response?.data?.message;
-          dispatch(addToast({
-            message: `Erreur lors de l'upload de ${file.name}: ${backendMessage || error.message}`,
-            type: 'error'
-          }));
-        }
+      try {
+        await fileService.uploadFile(file, currentFolderId, (percent) => {
+          setUploadProgress((prev) => ({ ...prev, [key]: percent }));
+        });
+        successCount++;
+        setUploadProgress((prev) => ({ ...prev, [key]: 100 }));
+      } catch (error) {
+        console.error(`Erreur lors de l'upload de ${file.name}:`, error);
+        errors[key] = error.response?.data?.message || error.message || 'Erreur lors de l\'upload';
+        failed.push(file);
       }
-
-      if (successCount > 0) {
-        dispatch(addToast({
-          message: `${successCount} fichier(s) uploadé(s) avec succès`,
-          type: 'success'
-        }));
-      }
-
-      setSelectedFiles([]);
-      setUploadProgress({});
-      onClose();
-      window.location.reload(); // Recharger pour voir les nouveaux fichiers
-    } catch (error) {
-      console.error('Erreur lors de l\'upload:', error);
-      dispatch(addToast({
-        message: error.response?.data?.message || 'Erreur lors de l\'upload',
-        type: 'error'
-      }));
-    } finally {
-      setUploading(false);
     }
-  };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    if (successCount > 0) {
+      needsRefreshRef.current = true;
+    }
+
+    setUploading(false);
+
+    if (failed.length === 0) {
+      dispatch(addToast({
+        message: `${successCount} fichier(s) uploadé(s) avec succès`,
+        type: 'success'
+      }));
+      handleClose();
+      return;
+    }
+
+    // Des fichiers ont échoué : on garde la fenêtre ouverte pour afficher les erreurs
+    setSelectedFiles(failed);
+    setUploadErrors(errors);
+    setUploadProgress({});
+    dispatch(addToast({
+      message: successCount > 0
+        ? `${successCount} fichier(s) uploadé(s), ${failed.length} en échec`
+        : `${failed.length} fichier(s) en échec`,
+      type: 'error'
+    }));
   };
 
   return (
@@ -100,7 +121,7 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Uploader des fichiers</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             disabled={uploading}
           >
@@ -122,7 +143,7 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
               Glissez-déposez vos fichiers ici ou cliquez pour sélectionner
             </p>
             <p className="text-sm text-gray-500">
-              Vous pouvez sélectionner plusieurs fichiers
+              Tous les types de fichiers sont acceptés, dans la limite de votre espace restant
             </p>
             <input
               ref={fileInputRef}
@@ -140,61 +161,58 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
                 Fichiers sélectionnés ({selectedFiles.length})
               </h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3 flex-1">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {formatFileSize(file.size)}
-                        </p>
-                      </div>
-                    </div>
-                    {!uploading && (
-                      <button
-                        onClick={() => handleRemoveFile(index)}
-                        className="p-1 hover:bg-red-100 rounded transition-colors"
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                {selectedFiles.map((file, index) => {
+                  const key = fileKey(file);
+                  const error = uploadErrors[key];
+                  const progress = uploadProgress[key] || 0;
 
-          {/* Progression */}
-          {uploading && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                Upload en cours...
-              </h3>
-              <div className="space-y-2">
-                {selectedFiles.map((file, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {file.name}
-                      </p>
-                      <span className="text-xs text-gray-500">
-                        {uploadProgress[file.name] || 0}%
-                      </span>
+                  return (
+                    <div
+                      key={`${key}-${index}`}
+                      className={`p-3 rounded-lg ${error ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate" title={file.name}>
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatBytes(file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        {uploading ? (
+                          <span className="text-xs text-gray-500 ml-3">{progress}%</span>
+                        ) : (
+                          <button
+                            onClick={() => handleRemoveFile(index)}
+                            className="p-1 hover:bg-red-100 rounded transition-colors ml-3"
+                          >
+                            <X className="h-4 w-4 text-red-500" />
+                          </button>
+                        )}
+                      </div>
+
+                      {uploading && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      )}
+
+                      {error && (
+                        <p className="flex items-start text-xs text-red-700 mt-2">
+                          <AlertCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                          <span>{error}</span>
+                        </p>
+                      )}
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress[file.name] || 0}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -203,11 +221,11 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
         {/* Footer */}
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={uploading}
             className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Annuler
+            {needsRefreshRef.current ? 'Fermer' : 'Annuler'}
           </button>
           <button
             onClick={handleUpload}

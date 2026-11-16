@@ -1,7 +1,8 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Download, Trash2, Edit, Move, MoreVertical, Folder } from 'lucide-react';
+import { Eye, Download, Trash2, Edit, Move, Folder } from 'lucide-react';
+import ActionMenu from './ActionMenu';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
@@ -66,7 +67,6 @@ const FileListItem = ({ file, variant = 'default' }) => {
   const isRecent = variant === 'recent';
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [showMenu, setShowMenu] = React.useState(false);
 
   const handlePreview = () => {
     dispatch(openFileViewerModal(file));
@@ -94,7 +94,6 @@ const FileListItem = ({ file, variant = 'default' }) => {
         type: 'error'
       }));
     }
-    setShowMenu(false);
   };
 
   const handleDelete = async () => {
@@ -109,7 +108,6 @@ const FileListItem = ({ file, variant = 'default' }) => {
         message: 'Fichier mis à la corbeille',
         type: 'success'
       }));
-      setShowMenu(false);
       refreshUser(dispatch);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
@@ -122,14 +120,20 @@ const FileListItem = ({ file, variant = 'default' }) => {
 
   const handleRename = () => {
     dispatch(openRenameModal({ item: file, type: 'file' }));
-    setShowMenu(false);
   };
 
   const handleMove = () => {
     // TODO: Implémenter le déplacement
     console.log('Move file:', file.id);
-    setShowMenu(false);
   };
+
+  const menuItems = [
+    { label: 'Prévisualiser', icon: Eye, onClick: handlePreview },
+    { label: 'Télécharger', icon: Download, onClick: handleDownload },
+    { label: 'Renommer', icon: Edit, onClick: handleRename },
+    { label: 'Déplacer', icon: Move, onClick: handleMove },
+    { label: 'Supprimer', icon: Trash2, onClick: handleDelete, danger: true },
+  ];
 
   return (
     <tr
@@ -199,70 +203,8 @@ const FileListItem = ({ file, variant = 'default' }) => {
         </>
       )}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div className="relative inline-block">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMenu(!showMenu);
-            }}
-            className="p-1 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <MoreVertical size={16} className="text-gray-500" />
-          </button>
-          {showMenu && (
-            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePreview();
-                }}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Eye size={16} className="mr-2" />
-                Prévisualiser
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload();
-                }}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Download size={16} className="mr-2" />
-                Télécharger
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRename();
-                }}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Edit size={16} className="mr-2" />
-                Renommer
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMove();
-                }}
-                className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Move size={16} className="mr-2" />
-                Déplacer
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-              >
-                <Trash2 size={16} className="mr-2" />
-                Supprimer
-              </button>
-            </div>
-          )}
+        <div className="inline-block">
+          <ActionMenu items={menuItems} />
         </div>
       </td>
     </tr>

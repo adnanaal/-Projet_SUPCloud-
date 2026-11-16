@@ -1,7 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { File, MoreVertical, Download, Trash2, Edit, Move, Eye } from 'lucide-react';
+import { Download, Trash2, Edit, Move, Eye } from 'lucide-react';
+import ActionMenu from './ActionMenu';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
@@ -12,7 +13,6 @@ import { refreshUser } from '../../utils/refreshUser';
 const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [showMenu, setShowMenu] = React.useState(false);
 
   const handleDownload = async () => {
     try {
@@ -36,7 +36,6 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
         type: 'error'
       }));
     }
-    setShowMenu(false);
   };
 
   const handleDelete = async () => {
@@ -51,7 +50,6 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
         message: 'Fichier mis à la corbeille',
         type: 'success'
       }));
-      setShowMenu(false);
       refreshUser(dispatch);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
@@ -86,6 +84,14 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
     if (onDragEnd) onDragEnd();
   };
 
+  const menuItems = [
+    { label: 'Prévisualiser', icon: Eye, onClick: handlePreview },
+    { label: 'Télécharger', icon: Download, onClick: handleDownload },
+    { label: 'Renommer', icon: Edit, onClick: handleRename },
+    { label: 'Déplacer', icon: Move, onClick: handleMove },
+    { label: 'Supprimer', icon: Trash2, onClick: handleDelete, danger: true },
+  ];
+
   return (
     <div
       className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group min-w-0 ${
@@ -113,75 +119,8 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
               </div>
             </div>
           </div>
-          <div className="relative flex-shrink-0 ml-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-1 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical size={16} className="text-gray-500" />
-            </button>
-            {showMenu && (
-              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePreview();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Eye size={16} className="mr-2" />
-                  Prévisualiser
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Download size={16} className="mr-2" />
-                  Télécharger
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRename();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Edit size={16} className="mr-2" />
-                  Renommer
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMove();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <Move size={16} className="mr-2" />
-                  Déplacer
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Supprimer
-                </button>
-              </div>
-            )}
+          <div className="ml-2">
+            <ActionMenu items={menuItems} />
           </div>
         </div>
       </div>

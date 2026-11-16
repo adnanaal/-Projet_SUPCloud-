@@ -20,7 +20,7 @@ model User {
   githubId      String?   @unique
   microsoftId   String?   @unique
   storageUsed   BigInt    @default(0)
-  storageLimit  BigInt    @default(32212254720) // 30 Go en octets
+  storageLimit  BigInt    @default(30000000000) // 30 Go en octets (unités décimales)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

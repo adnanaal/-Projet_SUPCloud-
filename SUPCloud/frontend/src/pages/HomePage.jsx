@@ -27,7 +27,8 @@ import { setFolders } from '../store/foldersSlice';
 import { fileService } from '../services/fileService';
 import { folderService } from '../services/folderService';
 import { refreshUser } from '../utils/refreshUser';
-import { formatBytes, formatPercent } from '../utils/formatBytes';
+import { formatBytes } from '../utils/formatBytes';
+import { getStorageInfo } from '../utils/storage';
 import {
   openUploadModal,
   openCreateFolderModal,
@@ -91,7 +92,7 @@ const StorageBreakdown = ({ categories, storageUsed, storageLimit }) => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Répartition du stockage</h3>
         <span className="text-sm text-gray-500">
-          {formatBytes(storageUsed)} utilisés sur {formatBytes(storageLimit)}
+          {formatBytes(storageUsed)} utilisés · {formatBytes(Math.max(0, storageLimit - storageUsed))} restants sur {formatBytes(storageLimit)}
         </span>
       </div>
 
@@ -178,8 +179,9 @@ const HomePage = () => {
     }
   }, [files.length, folders.length]);
 
-  const storageUsed = Number(user?.storageUsed) || 0;
-  const storageLimit = Number(user?.storageLimit) || 32212254720;
+  const storage = getStorageInfo(user);
+  const storageUsed = storage.used;
+  const storageLimit = storage.limit;
   const firstName = (user?.name || '').trim().split(' ')[0] || 'vous';
   const isEmpty = stats && stats.totalFiles === 0 && stats.totalFolders === 0;
 
@@ -253,8 +255,8 @@ const HomePage = () => {
             <StatCard
               icon={HardDrive}
               label="Espace utilisé"
-              value={`${formatPercent(storageUsed, storageLimit)} %`}
-              hint={`${formatBytes(storageUsed)} sur ${formatBytes(storageLimit)}`}
+              value={`${storage.percentLabel} %`}
+              hint={`${formatBytes(storage.used)} utilisés · ${formatBytes(storage.remaining)} restants`}
               onClick={() => navigate('/files')}
             />
           </div>

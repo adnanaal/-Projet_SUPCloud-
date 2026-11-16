@@ -3,17 +3,7 @@ const AppError = require('../utils/AppError');
 const serializeBigInt = require('../utils/serialize');
 const fs = require('fs');
 const { resolveFilePath, getExpirationDate } = require('../utils/trash');
-
-/**
- * Formater les octets en unités lisibles
- */
-const formatBytes = (bytes) => {
-  if (bytes === 0n) return '0 Bytes';
-  const k = 1024n;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = BigInt(Math.floor(Math.log(Number(bytes)) / Math.log(1024)));
-  return `${(bytes / BigInt(Math.pow(1024, Number(i)))).toString()} ${sizes[i]}`;
-};
+const formatBytes = require('../utils/formatBytes');
 
 /**
  * Uploader un fichier
@@ -58,14 +48,9 @@ const uploadFile = async (req, res, next) => {
     const storageRemaining = user.storageLimit - user.storageUsed;
 
     if (newStorageUsed > user.storageLimit) {
-      const usedGB = Number(user.storageUsed) / (1024 * 1024 * 1024);
-      const limitGB = Number(user.storageLimit) / (1024 * 1024 * 1024);
-      const fileMB = file.size / (1024 * 1024);
-      const remainingMB = Number(storageRemaining) / (1024 * 1024);
-
       throw new AppError(
         413,
-        `Quota de stockage dépassé. Espace utilisé : ${usedGB.toFixed(2)} Go / ${limitGB.toFixed(2)} Go. Espace restant : ${remainingMB.toFixed(2)} Mo. Taille du fichier : ${fileMB.toFixed(2)} Mo.`,
+        `Quota de stockage dépassé. Espace utilisé : ${formatBytes(user.storageUsed)} / ${formatBytes(user.storageLimit)}. Espace restant : ${formatBytes(storageRemaining > 0n ? storageRemaining : 0n)}. Taille du fichier : ${formatBytes(file.size)}.`,
         'QuotaExceededError'
       );
     }

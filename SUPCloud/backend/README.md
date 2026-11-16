@@ -211,5 +211,5 @@ backend/
 
 - Le fichier `.env` ne doit pas être commité (déjà dans .gitignore)
 - Les fichiers uploadés sont stockés dans le dossier `uploads/`
-- Le quota de stockage par défaut est de 30 Go (32212254720 octets)
+- Le quota de stockage par défaut est de 30 Go (30 000 000 000 octets)
 

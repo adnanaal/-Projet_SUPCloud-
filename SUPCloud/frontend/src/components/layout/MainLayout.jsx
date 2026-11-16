@@ -16,7 +16,7 @@ const MainLayout = ({ children }) => {
           sidebarOpen ? 'ml-64' : 'ml-0'
         }`}
       >
-        <main className="p-8">{children}</main>
+        <main className="p-8 pb-28">{children}</main>
       </div>
       <ToastContainer />
     </div>

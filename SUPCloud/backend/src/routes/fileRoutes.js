@@ -3,9 +3,10 @@ const router = express.Router();
 const fileController = require('../controllers/fileController');
 const authMiddleware = require('../middleware/auth');
 const upload = require('../config/multer');
+const checkUploadQuota = require('../middleware/uploadQuota');
 
 // Routes protégées
-router.post('/upload', authMiddleware, upload.single('file'), fileController.uploadFile);
+router.post('/upload', authMiddleware, checkUploadQuota, upload.single('file'), fileController.uploadFile);
 router.get('/', authMiddleware, fileController.getFiles);
 router.get('/recent', authMiddleware, fileController.getRecentFiles);
 router.get('/stats', authMiddleware, fileController.getStorageStats);

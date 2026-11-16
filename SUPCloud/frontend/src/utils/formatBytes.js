@@ -5,6 +5,7 @@ export const formatBytes = (bytes) => {
   const sizes = ['o', 'ko', 'Mo', 'Go', 'To'];
   const i = Math.min(Math.floor(Math.log(value) / Math.log(k)), sizes.length - 1);
   const formatted = value / Math.pow(k, i);
+  if (i === 0) return `${Math.round(formatted)} ${sizes[i]}`;
   return `${formatted >= 100 ? Math.round(formatted) : formatted.toFixed(2)} ${sizes[i]}`;
 };
 

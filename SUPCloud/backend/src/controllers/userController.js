@@ -1,6 +1,7 @@
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 const bcrypt = require('bcrypt');
+const toPublicUser = require('../utils/publicUser');
 
 /**
  * Obtenir les informations de l'utilisateur connecté
@@ -9,33 +10,14 @@ const getMe = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        storageUsed: true,
-        storageLimit: true,
-        googleId: true,
-        githubId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
 
     if (!user) {
       throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
-    // Convertir les BigInt en nombres pour la sérialisation JSON
-    const serializedUser = {
-      ...user,
-      storageUsed: user.storageUsed ? Number(user.storageUsed) : 0,
-      storageLimit: user.storageLimit ? Number(user.storageLimit) : 32212254720,
-    };
-
     res.status(200).json({
-      user: serializedUser,
+      user: toPublicUser(user),
     });
   } catch (error) {
     next(error);
@@ -77,30 +59,11 @@ const updateProfile = async (req, res, next) => {
         ...(email && { email }),
         ...(avatar && { avatar }),
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-        storageUsed: true,
-        storageLimit: true,
-        googleId: true,
-        githubId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-
-    // Convertir les BigInt en nombres pour la sérialisation JSON
-    const serializedUser = {
-      ...user,
-      storageUsed: user.storageUsed ? Number(user.storageUsed) : 0,
-      storageLimit: user.storageLimit ? Number(user.storageLimit) : 32212254720,
-    };
 
     res.status(200).json({
       message: 'Profil mis à jour avec succès',
-      user: serializedUser,
+      user: toPublicUser(user),
     });
   } catch (error) {
     next(error);

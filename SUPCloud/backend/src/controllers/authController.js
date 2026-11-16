@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const { generateToken } = require('../config/jwt');
 const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
+const toPublicUser = require('../utils/publicUser');
 
 /**
  * Inscription d'un nouvel utilisateur
@@ -48,15 +49,8 @@ const register = async (req, res, next) => {
       name: user.name,
     });
 
-    // Retourner l'utilisateur sans le mot de passe
-    const { password: _, ...userWithoutPassword } = user;
-
-    // Convertir les BigInt en nombres pour la sérialisation JSON
-    const serializedUser = {
-      ...userWithoutPassword,
-      storageUsed: userWithoutPassword.storageUsed ? Number(userWithoutPassword.storageUsed) : 0,
-      storageLimit: userWithoutPassword.storageLimit ? Number(userWithoutPassword.storageLimit) : 32212254720,
-    };
+    // Retourner l'utilisateur sans le mot de passe (BigInt convertis)
+    const serializedUser = toPublicUser(user);
 
     res.status(201).json({
       message: 'Utilisateur créé avec succès',
@@ -108,15 +102,8 @@ const login = async (req, res, next) => {
       name: user.name,
     });
 
-    // Retourner l'utilisateur sans le mot de passe
-    const { password: _, ...userWithoutPassword } = user;
-
-    // Convertir les BigInt en nombres pour la sérialisation JSON
-    const serializedUser = {
-      ...userWithoutPassword,
-      storageUsed: userWithoutPassword.storageUsed ? Number(userWithoutPassword.storageUsed) : 0,
-      storageLimit: userWithoutPassword.storageLimit ? Number(userWithoutPassword.storageLimit) : 32212254720,
-    };
+    // Retourner l'utilisateur sans le mot de passe (BigInt convertis)
+    const serializedUser = toPublicUser(user);
 
     res.status(200).json({
       message: 'Connexion réussie',
