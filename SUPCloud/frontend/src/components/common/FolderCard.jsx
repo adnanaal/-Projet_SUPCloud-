@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Folder, Edit, Move, Trash2, Download } from 'lucide-react';
 import ActionMenu from './ActionMenu';
 import { folderService } from '../../services/folderService';
-import { addToast, openRenameModal } from '../../store/uiSlice';
+import { addToast, openRenameModal, openMoveModal } from '../../store/uiSlice';
 import { removeFolder } from '../../store/foldersSlice';
 import { refreshUser } from '../../utils/refreshUser';
 import { getDraggedItem, isSupCloudDrag, moveItemToFolder } from '../../utils/moveItem';
@@ -47,8 +47,7 @@ const FolderCard = ({ folder, onDragStart, onDragEnd, isDragging }) => {
   };
 
   const handleMove = () => {
-    // TODO: Implémenter le déplacement
-    console.log('Move folder:', folder.id);
+    dispatch(openMoveModal({ item: folder, type: 'folder' }));
   };
 
   const handleDelete = async () => {

@@ -6,7 +6,7 @@ import ActionMenu from './ActionMenu';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
-import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
+import { addToast, openRenameModal, openMoveModal, openFileViewerModal } from '../../store/uiSlice';
 import { removeFile } from '../../store/filesSlice';
 import { refreshUser } from '../../utils/refreshUser';
 
@@ -123,8 +123,7 @@ const FileListItem = ({ file, variant = 'default' }) => {
   };
 
   const handleMove = () => {
-    // TODO: Implémenter le déplacement
-    console.log('Move file:', file.id);
+    dispatch(openMoveModal({ item: file, type: 'file' }));
   };
 
   const menuItems = [

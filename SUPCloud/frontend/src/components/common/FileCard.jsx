@@ -6,7 +6,7 @@ import ActionMenu from './ActionMenu';
 import FileIcon from './FileIcon';
 import { formatBytes } from '../../utils/formatBytes';
 import { fileService } from '../../services/fileService';
-import { addToast, openRenameModal, openFileViewerModal } from '../../store/uiSlice';
+import { addToast, openRenameModal, openMoveModal, openFileViewerModal } from '../../store/uiSlice';
 import { removeFile } from '../../store/filesSlice';
 import { refreshUser } from '../../utils/refreshUser';
 
@@ -65,8 +65,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
   };
 
   const handleMove = () => {
-    // TODO: Implémenter le déplacement
-    console.log('Move file:', file.id);
+    dispatch(openMoveModal({ item: file, type: 'file' }));
   };
 
   const handlePreview = () => {

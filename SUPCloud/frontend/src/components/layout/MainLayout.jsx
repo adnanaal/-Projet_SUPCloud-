@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import ToastContainer from '../common/ToastContainer';
+import MoveModal from '../common/MoveModal';
 
 const MainLayout = ({ children }) => {
   const { sidebarOpen } = useSelector((state) => state.ui);
@@ -18,6 +19,7 @@ const MainLayout = ({ children }) => {
       >
         <main className="p-8 pb-28">{children}</main>
       </div>
+      <MoveModal />
       <ToastContainer />
     </div>
   );

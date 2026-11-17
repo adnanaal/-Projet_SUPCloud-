@@ -6,9 +6,13 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { formatBytes } from '../../utils/formatBytes';
+import { getPreviewType } from '../../utils/fileType';
 
 // Configuration du worker PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
+// Au-delà, seul le début d'un fichier texte est affiché (évite de figer la page)
+const MAX_TEXT_PREVIEW_BYTES = 1000000;
 
 const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -23,14 +27,16 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [unsupportedFormat, setUnsupportedFormat] = useState(false);
+  const [textTruncated, setTextTruncated] = useState(false);
   const cacheRef = useRef({});
 
   // Variables de détection de type de fichier
-  const isImage = file?.mimeType?.startsWith('image/');
-  const isVideo = file?.mimeType?.startsWith('video/');
-  const isPdf = file?.mimeType === 'application/pdf';
-  const isText = file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html';
-  const isAudio = file?.mimeType?.startsWith('audio/');
+  const previewType = getPreviewType(file);
+  const isImage = previewType === 'image';
+  const isVideo = previewType === 'video';
+  const isPdf = previewType === 'pdf';
+  const isText = previewType === 'text';
+  const isAudio = previewType === 'audio';
   const isSupported = isImage || isVideo || isPdf || isText || isAudio;
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < files.length - 1;
@@ -86,8 +92,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   const loadPreview = async () => {
     if (!file) return;
 
-    // Vérifier le cache
-    if (cacheRef.current[file.id]) {
+    // Vérifier le cache (les fichiers texte sont toujours relus : leur contenu n'est pas servi par une URL)
+    if (!isText && cacheRef.current[file.id]) {
       setPreviewUrl(cacheRef.current[file.id]);
       setLoading(false);
       setError(null);
@@ -98,6 +104,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     setError(null);
     setErrorDetails(null);
     setTextContent('');
+    setTextTruncated(false);
     setUnsupportedFormat(false);
 
     // Format non prévisualisable : pas besoin de télécharger le fichier
@@ -108,12 +115,13 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
     }
 
     try {
-      if (file?.mimeType === 'text/plain' || file?.mimeType === 'text/markdown' || file?.mimeType === 'text/html') {
-        // Pour les fichiers texte, charger le contenu en texte
+      if (isText) {
+        // Pour les fichiers texte, charger le contenu en texte (début du fichier seulement s'il est très gros)
         const blob = await fileService.downloadFile(file.id);
-        const text = await blob.text();
+        const truncated = blob.size > MAX_TEXT_PREVIEW_BYTES;
+        const text = await (truncated ? blob.slice(0, MAX_TEXT_PREVIEW_BYTES) : blob).text();
         setTextContent(text);
-        // Pas de cache pour les textes (peu volumineux mais variable)
+        setTextTruncated(truncated);
       } else {
         // Pour les autres types, charger en blob avec timeout
         const blob = await Promise.race([
@@ -196,6 +204,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
         if (index < 0 || index >= files.length) return;
         const adjacentFile = files[index];
         if (cacheRef.current[adjacentFile.id]) return;
+        if (['text', null].includes(getPreviewType(adjacentFile))) return;
 
         try {
           const blob = await fileService.downloadFile(adjacentFile.id);
@@ -427,6 +436,11 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
               ) : isText ? (
                 <div className="flex flex-col w-full max-h-[70vh]">
                   <div className="bg-white p-4 rounded-lg shadow-sm w-full overflow-auto flex-1">
+                    {textTruncated && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+                        Aperçu limité au début du fichier. Téléchargez-le pour le lire en entier.
+                      </p>
+                    )}
                     <pre className="text-sm text-gray-800 font-mono whitespace-pre-wrap">
                       {textContent || 'Contenu vide'}
                     </pre>

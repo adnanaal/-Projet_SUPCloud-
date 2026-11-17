@@ -4,6 +4,7 @@ const serializeBigInt = require('../utils/serialize');
 const fs = require('fs');
 const { resolveFilePath, getExpirationDate } = require('../utils/trash');
 const formatBytes = require('../utils/formatBytes');
+const resolveMimeType = require('../utils/mimeType');
 
 /**
  * Uploader un fichier
@@ -60,7 +61,7 @@ const uploadFile = async (req, res, next) => {
       data: {
         name: file.originalname,
         size: fileSize,
-        mimeType: file.mimetype,
+        mimeType: resolveMimeType(file.originalname, file.mimetype),
         path: file.path,
         folderId: folderId || null,
         userId: req.user.id,
