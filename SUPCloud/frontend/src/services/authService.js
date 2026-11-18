@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
-const API_URL = 'http://localhost:3000/api/auth';
+const API_URL = `${API_BASE_URL}/api/auth`;
 
 /**
  * Inscription d'un nouvel utilisateur
@@ -37,19 +38,19 @@ export const logout = async () => {
  * Connexion avec Google OAuth2
  */
 export const loginWithGoogle = () => {
-  window.location.href = '/auth/google';
+  window.location.href = `${API_BASE_URL}/auth/google`;
 };
 
 /**
  * Connexion avec GitHub OAuth2
  */
 export const loginWithGitHub = () => {
-  window.location.href = '/auth/github';
+  window.location.href = `${API_BASE_URL}/auth/github`;
 };
 
 /**
  * Connexion avec Microsoft OAuth2
  */
 export const loginWithMicrosoft = () => {
-  window.location.href = '/auth/microsoft';
+  window.location.href = `${API_BASE_URL}/auth/microsoft`;
 };

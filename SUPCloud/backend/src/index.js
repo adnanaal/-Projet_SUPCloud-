@@ -13,6 +13,9 @@ const errorHandler = require('./middleware/errorHandler');
 const toPublicUser = require('./utils/publicUser');
 
 const app = express();
+
+// En cas d'échec ou d'annulation de la connexion OAuth2, retour sur la page de connexion du frontend
+const OAUTH_FAILURE_REDIRECT = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=oauth`;
 const PORT = 3000;
 
 // Middleware
@@ -53,7 +56,7 @@ app.use('/api/trash', trashRoutes);
 
 // Routes OAuth2
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), (req, res) => {
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -61,7 +64,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 });
 
 app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
-app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/login', session: false }), (req, res) => {
+app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -69,7 +72,7 @@ app.get('/auth/github/callback', passport.authenticate('github', { failureRedire
 });
 
 app.get('/auth/microsoft', passport.authenticate('azure_ad_oauth2', { scope: ['openid', 'profile', 'email'] }));
-app.get('/auth/microsoft/callback', passport.authenticate('azure_ad_oauth2', { failureRedirect: '/login', session: false }), (req, res) => {
+app.get('/auth/microsoft/callback', passport.authenticate('azure_ad_oauth2', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';

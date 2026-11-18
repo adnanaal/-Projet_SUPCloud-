@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginSuccess } from '../store/authSlice';
 import { login, loginWithGoogle, loginWithGitHub, loginWithMicrosoft } from '../services/authService';
@@ -8,10 +8,21 @@ import logoImage from '/logo.jpg';
 const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/home', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).get('error') === 'oauth'
+      ? 'La connexion avec le service externe a échoué ou a été annulée. Veuillez réessayer.'
+      : ''
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();

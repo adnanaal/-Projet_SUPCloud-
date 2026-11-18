@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/authSlice';
 import { useNavigate } from 'react-router-dom';
@@ -6,8 +6,14 @@ import { useNavigate } from 'react-router-dom';
 const OAuthCallback = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const handledRef = useRef(false);
 
   useEffect(() => {
+    // Le retour OAuth2 ne doit être traité qu'une fois : sinon la seconde exécution (StrictMode),
+    // qui ne retrouve plus les paramètres dans l'URL, renverrait vers la page de connexion
+    if (handledRef.current) return;
+    handledRef.current = true;
+
     // Récupérer les données de l'authentification OAuth2 depuis l'URL
     const params = new URLSearchParams(window.location.search);
     const user = params.get('user');
@@ -15,7 +21,7 @@ const OAuthCallback = () => {
 
     if (user && token) {
       try {
-        const userData = JSON.parse(decodeURIComponent(user));
+        const userData = JSON.parse(user);
         dispatch(loginSuccess({ user: userData, token }));
         navigate('/home');
       } catch (error) {
