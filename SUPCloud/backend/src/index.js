@@ -71,8 +71,12 @@ app.get('/auth/github/callback', passport.authenticate('github', { failureRedire
   res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
 });
 
-app.get('/auth/microsoft', passport.authenticate('azure_ad_oauth2', { scope: ['openid', 'profile', 'email'] }));
-app.get('/auth/microsoft/callback', passport.authenticate('azure_ad_oauth2', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
+// Microsoft est optionnel : sans identifiants configurés, on revient sur la page de connexion
+const microsoftEnabled = Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+const requireMicrosoft = (req, res, next) => (microsoftEnabled ? next() : res.redirect(OAUTH_FAILURE_REDIRECT));
+
+app.get('/auth/microsoft', requireMicrosoft, passport.authenticate('microsoft', { scope: ['openid', 'profile', 'email', 'User.Read'] }));
+app.get('/auth/microsoft/callback', requireMicrosoft, passport.authenticate('microsoft', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
