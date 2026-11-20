@@ -22,8 +22,8 @@ passport.use(
         const avatar = profile.photos[0]?.value;
 
         // Vérifier si l'utilisateur existe déjà avec cet email
-        let user = await prisma.user.findUnique({
-          where: { email },
+        let user = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: 'insensitive' } },
         });
 
         if (user) {
@@ -69,17 +69,33 @@ passport.use(
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: process.env.GITHUB_CALLBACK_URL,
+      // Sans ce scope déclaré ici, la bibliothèque ne récupère pas /user/emails
+      // (indispensable quand l'email du compte GitHub est privé)
+      scope: ['user:email'],
+      // Garder tous les emails avec leurs indicateurs primary et verified
+      allRawEmails: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails[0].value;
+        // Email principal et vérifié en priorité (la liste renvoyée par GitHub n'est pas triée)
+        const emails = profile.emails || [];
+        const emailEntry =
+          emails.find((entry) => entry.primary && entry.verified) ||
+          emails.find((entry) => entry.verified) ||
+          emails[0];
+        const email = emailEntry && emailEntry.value;
+
+        if (!email) {
+          return done(new Error("GitHub n'a fourni aucune adresse email (scope user:email requis)"), null);
+        }
+
         const githubId = profile.id.toString();
         const name = profile.displayName || profile.username;
-        const avatar = profile.photos[0]?.value;
+        const avatar = profile.photos && profile.photos[0] ? profile.photos[0].value : undefined;
 
         // Vérifier si l'utilisateur existe déjà avec cet email
-        let user = await prisma.user.findUnique({
-          where: { email },
+        let user = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: 'insensitive' } },
         });
 
         if (user) {

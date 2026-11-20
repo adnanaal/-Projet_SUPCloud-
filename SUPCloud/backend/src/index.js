@@ -55,8 +55,21 @@ app.use('/api/files', fileRoutes);
 app.use('/api/trash', trashRoutes);
 
 // Routes OAuth2
+
+// Callback OAuth2 : une erreur de la stratégie (email absent, échec de l'échange de code...) ou un refus
+// ramène sur la page de connexion du frontend au lieu d'afficher une réponse JSON brute
+const oauthCallback = (strategy) => (req, res, next) =>
+  passport.authenticate(strategy, { session: false }, (error, data) => {
+    if (error || !data) {
+      console.error(`Échec de la connexion OAuth2 (${strategy}) :`, error ? error.message : 'authentification refusée');
+      return res.redirect(OAUTH_FAILURE_REDIRECT);
+    }
+    req.user = data;
+    return next();
+  })(req, res, next);
+
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
+app.get('/auth/google/callback', oauthCallback('google'), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -64,7 +77,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 });
 
 app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
-app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
+app.get('/auth/github/callback', oauthCallback('github'), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -76,7 +89,7 @@ const microsoftEnabled = Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.
 const requireMicrosoft = (req, res, next) => (microsoftEnabled ? next() : res.redirect(OAUTH_FAILURE_REDIRECT));
 
 app.get('/auth/microsoft', requireMicrosoft, passport.authenticate('microsoft', { scope: ['openid', 'profile', 'email', 'User.Read'] }));
-app.get('/auth/microsoft/callback', requireMicrosoft, passport.authenticate('microsoft', { failureRedirect: OAUTH_FAILURE_REDIRECT, session: false }), (req, res) => {
+app.get('/auth/microsoft/callback', requireMicrosoft, oauthCallback('microsoft'), (req, res) => {
   const { user, token } = req.user;
   const userWithoutPassword = toPublicUser(user);
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
