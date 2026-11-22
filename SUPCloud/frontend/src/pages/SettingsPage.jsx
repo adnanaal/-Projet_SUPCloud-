@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { User, Mail, Calendar, Edit, Save, X, Lock, Trash2, AlertTriangle, HardDrive, Link2, KeyRound } from 'lucide-react';
-import { updateProfile, changePassword, deleteAccount } from '../services/userService';
+import { updateProfile, changePassword, deleteAccount, createOAuthLinkToken, disconnectOAuth } from '../services/userService';
+import { API_BASE_URL } from '../config';
 import { addToast } from '../store/uiSlice';
 import { updateUser, logout } from '../store/authSlice';
 import { refreshUser } from '../utils/refreshUser';
@@ -39,23 +40,49 @@ const MicrosoftIcon = () => (
   </svg>
 );
 
-// Ligne d'un mode de connexion : fournisseur, état (connecté ou non)
-const ConnectionRow = ({ icon, name, description, connected }) => (
+const PROVIDER_LABELS = { google: 'Google', github: 'GitHub', microsoft: 'Microsoft' };
+
+// Messages affichés au retour d'une tentative de rattachement échouée
+const LINK_ERRORS = {
+  conflict: 'Ce compte est déjà rattaché à un autre compte SUPCloud.',
+  already_linked: 'Un autre compte de ce fournisseur est déjà connecté. Déconnectez-le d\'abord.',
+  expired: 'La demande a expiré. Veuillez réessayer.',
+  failed: 'La connexion avec le fournisseur a échoué. Veuillez réessayer.',
+};
+
+// Ligne d'un mode de connexion : fournisseur, état (connecté ou non) et action éventuelle
+const ConnectionRow = ({ icon, name, description, connected, action }) => (
   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center space-x-3 min-w-0">
       <div className="flex-shrink-0">{icon}</div>
-      <div>
+      <div className="min-w-0">
         <p className="font-medium text-gray-900">{name}</p>
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-gray-500 truncate">{description}</p>
       </div>
     </div>
-    <span
-      className={`px-3 py-1 rounded-full text-sm font-medium ${
-        connected ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
-      }`}
-    >
-      {connected ? 'Connecté' : 'Non connecté'}
-    </span>
+    <div className="flex items-center space-x-3 flex-shrink-0 ml-3">
+      <span
+        className={`px-3 py-1 rounded-full text-sm font-medium ${
+          connected ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
+        }`}
+      >
+        {connected ? 'Connecté' : 'Non connecté'}
+      </span>
+      {action && (
+        <button
+          onClick={action.onClick}
+          disabled={action.disabled}
+          title={action.title}
+          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+            action.danger
+              ? 'text-red-600 border-red-200 hover:bg-red-50'
+              : 'text-indigo-600 border-indigo-200 hover:bg-indigo-50'
+          }`}
+        >
+          {action.label}
+        </button>
+      )}
+    </div>
   </div>
 );
 
@@ -63,7 +90,33 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const returnHandledRef = useRef(false);
+  const [busyProvider, setBusyProvider] = useState('');
   const storage = getStorageInfo(user);
+
+  // Modes de connexion disponibles : mot de passe local et fournisseurs rattachés
+  const linkedProviders = user?.linkedProviders || {};
+  const connectionCount = (user?.hasPassword === true ? 1 : 0) + Object.values(linkedProviders).filter(Boolean).length;
+
+  const providerAction = (provider) => {
+    const connected = Boolean(linkedProviders[provider]);
+    if (connected) {
+      const isLast = connectionCount <= 1;
+      return {
+        label: 'Déconnecter',
+        danger: true,
+        disabled: isLast || busyProvider === provider,
+        title: isLast ? 'Dernier mode de connexion : connectez un autre compte avant de le retirer' : undefined,
+        onClick: () => handleDisconnectProvider(provider),
+      };
+    }
+    return {
+      label: busyProvider === provider ? 'Redirection...' : 'Connecter',
+      disabled: Boolean(busyProvider),
+      onClick: () => handleLinkProvider(provider),
+    };
+  };
 
   // Compte OAuth2 sans mot de passe local : pas de changement de mot de passe possible
   const hasPassword = user?.hasPassword !== false;
@@ -87,6 +140,63 @@ const SettingsPage = () => {
   useEffect(() => {
     refreshUser(dispatch);
   }, [dispatch]);
+
+  // Retour du fournisseur après une tentative de rattachement : message puis nettoyage de l'adresse
+  useEffect(() => {
+    // Traiter le retour une seule fois (React.StrictMode exécute les effets deux fois en développement)
+    if (returnHandledRef.current) return;
+    returnHandledRef.current = true;
+
+    const linked = searchParams.get('linked');
+    const oauthError = searchParams.get('oauth') === 'error';
+
+    if (linked && PROVIDER_LABELS[linked]) {
+      dispatch(addToast({ message: `Compte ${PROVIDER_LABELS[linked]} connecté avec succès`, type: 'success' }));
+      refreshUser(dispatch);
+    } else if (oauthError) {
+      dispatch(addToast({ message: LINK_ERRORS[searchParams.get('reason')] || LINK_ERRORS.failed, type: 'error' }));
+    }
+
+    if (linked || oauthError) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
+
+  // Connecter un compte : jeton de rattachement puis redirection vers le fournisseur
+  const handleLinkProvider = async (provider) => {
+    setBusyProvider(provider);
+    try {
+      const linkToken = await createOAuthLinkToken(token, provider);
+      window.location.href = `${API_BASE_URL}/auth/${provider}?link=${encodeURIComponent(linkToken)}`;
+    } catch (error) {
+      setBusyProvider('');
+      dispatch(addToast({
+        message: error.response?.data?.message || 'Impossible de démarrer la connexion avec ce fournisseur',
+        type: 'error',
+      }));
+    }
+  };
+
+  // Déconnecter un compte (un autre mode de connexion doit rester disponible)
+  const handleDisconnectProvider = async (provider) => {
+    if (!window.confirm(`Déconnecter votre compte ${PROVIDER_LABELS[provider]} ? Vous ne pourrez plus l'utiliser pour vous connecter.`)) {
+      return;
+    }
+
+    setBusyProvider(provider);
+    try {
+      const response = await disconnectOAuth(token, provider);
+      dispatch(updateUser(response.user));
+      dispatch(addToast({ message: response.message, type: 'success' }));
+    } catch (error) {
+      dispatch(addToast({
+        message: error.response?.data?.message || 'Erreur lors de la déconnexion',
+        type: 'error',
+      }));
+    } finally {
+      setBusyProvider('');
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Non disponible';
@@ -305,8 +415,9 @@ const SettingsPage = () => {
             <h3 className="text-lg font-semibold text-gray-900">Comptes connectés</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Ces modes de connexion donnent accès au même compte SUPCloud. Quand vous vous connectez avec Google, GitHub
-            ou Microsoft avec une adresse email identique à celle d'un compte existant, ils sont automatiquement rattachés.
+            Ces modes de connexion donnent accès au même compte SUPCloud. Connectez un compte Google, GitHub ou
+            Microsoft (même avec une adresse email différente) pour l'utiliser à la connexion. Avec une adresse email
+            identique à celle de votre compte, le rattachement se fait aussi automatiquement à la première connexion.
           </p>
 
           <div className="space-y-3" data-testid="linked-accounts">
@@ -320,19 +431,22 @@ const SettingsPage = () => {
               icon={<GoogleIcon />}
               name="Google"
               description="Connexion avec votre compte Google"
-              connected={Boolean(user?.linkedProviders?.google)}
+              connected={Boolean(linkedProviders.google)}
+              action={providerAction('google')}
             />
             <ConnectionRow
               icon={<GitHubIcon />}
               name="GitHub"
               description="Connexion avec votre compte GitHub"
-              connected={Boolean(user?.linkedProviders?.github)}
+              connected={Boolean(linkedProviders.github)}
+              action={providerAction('github')}
             />
             <ConnectionRow
               icon={<MicrosoftIcon />}
               name="Microsoft"
               description="Connexion avec votre compte Microsoft"
-              connected={Boolean(user?.linkedProviders?.microsoft)}
+              connected={Boolean(linkedProviders.microsoft)}
+              action={providerAction('microsoft')}
             />
           </div>
         </div>

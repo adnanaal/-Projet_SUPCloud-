@@ -47,6 +47,19 @@ export const changePassword = async (token, currentPassword, newPassword) => {
 };
 
 /**
+ * Obtenir un jeton de rattachement (valable 10 minutes) pour connecter un compte
+ * Google, GitHub ou Microsoft au compte de l'utilisateur connecté
+ */
+export const createOAuthLinkToken = async (token, provider) => {
+  const response = await axios.post(
+    `${API_URL}/me/oauth/${provider}/link-token`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data.token;
+};
+
+/**
  * Déconnecter un compte OAuth2
  */
 export const disconnectOAuth = async (token, provider) => {

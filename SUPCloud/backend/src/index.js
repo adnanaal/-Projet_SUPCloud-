@@ -11,6 +11,7 @@ const trashRoutes = require('./routes/trashRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 const toPublicUser = require('./utils/publicUser');
+const { verifyLinkToken } = require('./config/jwt');
 
 const app = express();
 
@@ -56,45 +57,90 @@ app.use('/api/trash', trashRoutes);
 
 // Routes OAuth2
 
-// Callback OAuth2 : une erreur de la stratégie (email absent, échec de l'échange de code...) ou un refus
-// ramène sur la page de connexion du frontend au lieu d'afficher une réponse JSON brute
-const oauthCallback = (strategy) => (req, res, next) =>
-  passport.authenticate(strategy, { session: false }, (error, data) => {
-    if (error || !data) {
-      console.error(`Échec de la connexion OAuth2 (${strategy}) :`, error ? error.message : 'authentification refusée');
-      return res.redirect(OAUTH_FAILURE_REDIRECT);
-    }
-    req.user = data;
-    return next();
-  })(req, res, next);
-
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/auth/google/callback', oauthCallback('google'), (req, res) => {
-  const { user, token } = req.user;
-  const userWithoutPassword = toPublicUser(user);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
-});
-
-app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
-app.get('/auth/github/callback', oauthCallback('github'), (req, res) => {
-  const { user, token } = req.user;
-  const userWithoutPassword = toPublicUser(user);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
-});
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const OAUTH_PROVIDERS = {
+  google: { scope: ['profile', 'email'] },
+  github: { scope: ['user:email'] },
+  microsoft: { scope: ['openid', 'profile', 'email', 'User.Read'] },
+};
 
 // Microsoft est optionnel : sans identifiants configurés, on revient sur la page de connexion
 const microsoftEnabled = Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
-const requireMicrosoft = (req, res, next) => (microsoftEnabled ? next() : res.redirect(OAUTH_FAILURE_REDIRECT));
+const requireProvider = (provider) => (req, res, next) =>
+  provider === 'microsoft' && !microsoftEnabled ? res.redirect(OAUTH_FAILURE_REDIRECT) : next();
 
-app.get('/auth/microsoft', requireMicrosoft, passport.authenticate('microsoft', { scope: ['openid', 'profile', 'email', 'User.Read'] }));
-app.get('/auth/microsoft/callback', requireMicrosoft, oauthCallback('microsoft'), (req, res) => {
-  const { user, token } = req.user;
+// Retour dans les Paramètres après une tentative de rattachement (succès ou erreur)
+const settingsRedirect = (params) => `${FRONTEND_URL}/settings?${new URLSearchParams(params).toString()}`;
+
+// Le paramètre « state » renvoyé par le fournisseur contient le jeton de rattachement : rattachement, pas connexion
+const isLinkRequest = (req, provider) => {
+  try {
+    return Boolean(req.query.state) && Boolean(verifyLinkToken(String(req.query.state), provider));
+  } catch (error) {
+    return false;
+  }
+};
+
+// Démarrage : /auth/<fournisseur> (connexion) ou /auth/<fournisseur>?link=<jeton> (rattachement
+// d'un compte au profil déjà connecté ; le jeton est transmis au fournisseur dans « state »)
+const startOAuth = (provider) => (req, res, next) => {
+  const options = { scope: OAUTH_PROVIDERS[provider].scope };
+
+  if (req.query.link) {
+    try {
+      verifyLinkToken(String(req.query.link), provider);
+    } catch (error) {
+      return res.redirect(settingsRedirect({ oauth: 'error', reason: 'expired' }));
+    }
+    options.state = String(req.query.link);
+  }
+
+  return passport.authenticate(provider, options)(req, res, next);
+};
+
+// Callback OAuth2 : une erreur de la stratégie (email absent, échec de l'échange de code...) ou un refus
+// ramène sur l'application au lieu d'afficher une réponse JSON brute :
+// page de connexion pour une connexion, Paramètres pour un rattachement
+const oauthCallback = (provider) => (req, res, next) =>
+  passport.authenticate(provider, { session: false }, (error, result) => {
+    const linking = isLinkRequest(req, provider);
+
+    if (error || !result) {
+      console.error(`Échec de la connexion OAuth2 (${provider}) :`, error ? error.message : 'authentification refusée');
+      if (!linking && !(error && error.code === 'LINK_EXPIRED')) {
+        return res.redirect(OAUTH_FAILURE_REDIRECT);
+      }
+      return res.redirect(settingsRedirect({ oauth: 'error', reason: error && error.code === 'LINK_EXPIRED' ? 'expired' : 'failed' }));
+    }
+
+    // Erreur métier : compte déjà rattaché ailleurs, fournisseur déjà connecté...
+    if (result.error) {
+      console.error(`Rattachement OAuth2 refusé (${provider}) : ${result.error}`);
+      return linking
+        ? res.redirect(settingsRedirect({ oauth: 'error', reason: result.error }))
+        : res.redirect(OAUTH_FAILURE_REDIRECT);
+    }
+
+    req.oauthResult = result;
+    return next();
+  })(req, res, next);
+
+// Fin du parcours : retour sur l'accueil connecté, ou dans les Paramètres après un rattachement
+const finishOAuth = (provider) => (req, res) => {
+  const { user, token, linked } = req.oauthResult;
+
+  if (linked) {
+    return res.redirect(settingsRedirect({ linked: provider }));
+  }
+
   const userWithoutPassword = toPublicUser(user);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
-});
+  return res.redirect(`${FRONTEND_URL}/oauth-callback?user=${encodeURIComponent(JSON.stringify(userWithoutPassword))}&token=${token}`);
+};
+
+for (const provider of Object.keys(OAUTH_PROVIDERS)) {
+  app.get(`/auth/${provider}`, requireProvider(provider), startOAuth(provider));
+  app.get(`/auth/${provider}/callback`, requireProvider(provider), oauthCallback(provider), finishOAuth(provider));
+}
 
 // Route de test pour l'authentification
 app.get('/api/protected', authMiddleware, (req, res) => {

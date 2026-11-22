@@ -2,6 +2,12 @@ const prisma = require('../config/database');
 const AppError = require('../utils/AppError');
 const bcrypt = require('bcrypt');
 const toPublicUser = require('../utils/publicUser');
+const { generateLinkToken } = require('../config/jwt');
+const { PROVIDER_FIELDS } = require('../utils/oauthAccount');
+
+const PROVIDER_LABELS = { google: 'Google', github: 'GitHub', microsoft: 'Microsoft' };
+
+const isMicrosoftConfigured = () => Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
 
 /**
  * Obtenir les informations de l'utilisateur connecté
@@ -133,15 +139,54 @@ const changePassword = async (req, res, next) => {
 };
 
 /**
- * Déconnecter un compte OAuth2
+ * Générer un jeton de rattachement pour connecter un compte Google, GitHub ou Microsoft
+ * à l'utilisateur déjà connecté (le navigateur est ensuite redirigé vers le fournisseur)
+ */
+const createOAuthLinkToken = async (req, res, next) => {
+  try {
+    const { provider } = req.params;
+    const field = PROVIDER_FIELDS[provider];
+
+    if (!field) {
+      throw new AppError(400, 'Fournisseur OAuth2 invalide (google, github ou microsoft requis)', 'ValidationError');
+    }
+
+    if (provider === 'microsoft' && !isMicrosoftConfigured()) {
+      throw new AppError(400, "La connexion Microsoft n'est pas configurée sur ce serveur", 'ValidationError');
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    if (!user) {
+      throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
+    }
+
+    if (user[field]) {
+      throw new AppError(
+        409,
+        `Un compte ${PROVIDER_LABELS[provider]} est déjà connecté. Déconnectez-le avant d'en connecter un autre.`,
+        'ConflictError'
+      );
+    }
+
+    res.status(200).json({ token: generateLinkToken(user.id, provider) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Déconnecter un compte OAuth2 (Google, GitHub ou Microsoft)
+ * Au moins un mode de connexion doit rester disponible (mot de passe ou autre fournisseur).
  */
 const disconnectOAuth = async (req, res, next) => {
   try {
-    const { provider } = req.params; // 'google' ou 'github'
+    const { provider } = req.params;
+    const field = PROVIDER_FIELDS[provider];
 
     // Validation
-    if (!provider || !['google', 'github'].includes(provider)) {
-      throw new AppError(400, 'Provider OAuth2 invalide (google ou github requis)', 'ValidationError');
+    if (!field) {
+      throw new AppError(400, 'Fournisseur OAuth2 invalide (google, github ou microsoft requis)', 'ValidationError');
     }
 
     // Vérifier si l'utilisateur existe
@@ -153,30 +198,33 @@ const disconnectOAuth = async (req, res, next) => {
       throw new AppError(404, 'Utilisateur introuvable', 'NotFoundError');
     }
 
-    // Vérifier si l'utilisateur a ce provider OAuth2 connecté
-    if (provider === 'google' && !user.googleId) {
-      throw new AppError(400, 'Aucune connexion Google à déconnecter', 'ValidationError');
+    // Vérifier que ce fournisseur est bien connecté
+    if (!user[field]) {
+      throw new AppError(400, `Aucune connexion ${PROVIDER_LABELS[provider]} à déconnecter`, 'ValidationError');
     }
 
-    if (provider === 'github' && !user.githubId) {
-      throw new AppError(400, 'Aucune connexion GitHub à déconnecter', 'ValidationError');
+    // Vérifier qu'un autre mode de connexion restera disponible
+    const remainingMethods =
+      (user.password ? 1 : 0) +
+      Object.values(PROVIDER_FIELDS).filter((otherField) => otherField !== field && user[otherField]).length;
+
+    if (remainingMethods === 0) {
+      throw new AppError(
+        400,
+        'Impossible de déconnecter votre dernier mode de connexion. Connectez un autre compte avant de déconnecter celui-ci.',
+        'ValidationError'
+      );
     }
 
-    // Vérifier que l'utilisateur a un mot de passe avant de déconnecter OAuth2
-    if (!user.password) {
-      throw new AppError(400, 'Vous devez définir un mot de passe avant de déconnecter OAuth2', 'ValidationError');
-    }
-
-    // Mettre à jour l'utilisateur pour supprimer l'ID OAuth2
-    const updateData = provider === 'google' ? { googleId: null } : { githubId: null };
-
-    await prisma.user.update({
+    // Supprimer l'identifiant du fournisseur
+    const updated = await prisma.user.update({
       where: { id: req.user.id },
-      data: updateData,
+      data: { [field]: null },
     });
 
     res.status(200).json({
-      message: `Connexion ${provider === 'google' ? 'Google' : 'GitHub'} déconnectée avec succès`,
+      message: `Connexion ${PROVIDER_LABELS[provider]} déconnectée avec succès`,
+      user: toPublicUser(updated),
     });
   } catch (error) {
     next(error);
@@ -228,6 +276,7 @@ module.exports = {
   getMe,
   updateProfile,
   changePassword,
+  createOAuthLinkToken,
   disconnectOAuth,
   deleteAccount,
 };

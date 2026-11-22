@@ -22,6 +22,11 @@ const authMiddleware = (req, res, next) => {
     // Vérifier le token
     const decoded = verifyToken(token);
 
+    // Les jetons à usage limité (ex. rattachement OAuth2) ne sont pas des jetons de session
+    if (decoded.purpose) {
+      throw new Error('Jeton non valable pour accéder à l\'API');
+    }
+
     // Ajouter les informations de l'utilisateur à la requête
     req.user = decoded;
 

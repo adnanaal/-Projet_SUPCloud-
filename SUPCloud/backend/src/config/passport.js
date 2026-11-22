@@ -3,8 +3,26 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const OAuth2Strategy = require('passport-oauth2');
 const jwt = require('jsonwebtoken');
-const { generateToken } = require('./jwt');
-const prisma = require('./database');
+const { verifyLinkToken } = require('./jwt');
+const { handleOAuthProfile } = require('../utils/oauthAccount');
+
+/**
+ * Détermine si la requête de retour du fournisseur est un rattachement (et non une connexion) :
+ * le paramètre « state » contient alors le jeton de rattachement émis pour l'utilisateur connecté.
+ * Retourne l'identifiant de l'utilisateur, ou null pour une connexion normale.
+ */
+const getLinkUserId = (req, provider) => {
+  const state = req.query && req.query.state;
+  if (!state) return null;
+
+  try {
+    return verifyLinkToken(String(state), provider).userId;
+  } catch (error) {
+    const expired = new Error('La demande de rattachement a expiré ou est invalide');
+    expired.code = 'LINK_EXPIRED';
+    throw expired;
+  }
+};
 
 // Configuration de la stratégie Google OAuth2
 passport.use(
@@ -13,48 +31,29 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      passReqToCallback: true,
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails[0].value;
-        const googleId = profile.id;
-        const name = profile.displayName || profile.name.givenName;
-        const avatar = profile.photos[0]?.value;
+        const linkUserId = getLinkUserId(req, 'google');
+        const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
-        // Vérifier si l'utilisateur existe déjà avec cet email
-        let user = await prisma.user.findFirst({
-          where: { email: { equals: email, mode: 'insensitive' } },
-        });
-
-        if (user) {
-          // Si l'utilisateur existe mais n'a pas de googleId, le mettre à jour
-          if (!user.googleId) {
-            user = await prisma.user.update({
-              where: { id: user.id },
-              data: { googleId, avatar: avatar || user.avatar },
-            });
-          }
-        } else {
-          // Créer un nouvel utilisateur
-          user = await prisma.user.create({
-            data: {
-              email,
-              googleId,
-              name,
-              avatar,
-            },
-          });
+        if (!email && !linkUserId) {
+          return done(new Error("Google n'a fourni aucune adresse email"), null);
         }
 
-        // Générer un token JWT
-        const token = generateToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        });
+        const result = await handleOAuthProfile(
+          'google',
+          {
+            providerId: profile.id,
+            email,
+            name: profile.displayName || (profile.name && profile.name.givenName),
+            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
+          },
+          linkUserId
+        );
 
-        // Retourner l'utilisateur avec le token
-        return done(null, { user, token });
+        return done(null, result);
       } catch (error) {
         return done(error, null);
       }
@@ -74,9 +73,12 @@ passport.use(
       scope: ['user:email'],
       // Garder tous les emails avec leurs indicateurs primary et verified
       allRawEmails: true,
+      passReqToCallback: true,
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
+        const linkUserId = getLinkUserId(req, 'github');
+
         // Email principal et vérifié en priorité (la liste renvoyée par GitHub n'est pas triée)
         const emails = profile.emails || [];
         const emailEntry =
@@ -85,48 +87,22 @@ passport.use(
           emails[0];
         const email = emailEntry && emailEntry.value;
 
-        if (!email) {
+        if (!email && !linkUserId) {
           return done(new Error("GitHub n'a fourni aucune adresse email (scope user:email requis)"), null);
         }
 
-        const githubId = profile.id.toString();
-        const name = profile.displayName || profile.username;
-        const avatar = profile.photos && profile.photos[0] ? profile.photos[0].value : undefined;
+        const result = await handleOAuthProfile(
+          'github',
+          {
+            providerId: profile.id,
+            email,
+            name: profile.displayName || profile.username,
+            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
+          },
+          linkUserId
+        );
 
-        // Vérifier si l'utilisateur existe déjà avec cet email
-        let user = await prisma.user.findFirst({
-          where: { email: { equals: email, mode: 'insensitive' } },
-        });
-
-        if (user) {
-          // Si l'utilisateur existe mais n'a pas de githubId, le mettre à jour
-          if (!user.githubId) {
-            user = await prisma.user.update({
-              where: { id: user.id },
-              data: { githubId, avatar: avatar || user.avatar },
-            });
-          }
-        } else {
-          // Créer un nouvel utilisateur
-          user = await prisma.user.create({
-            data: {
-              email,
-              githubId,
-              name,
-              avatar,
-            },
-          });
-        }
-
-        // Générer un token JWT
-        const token = generateToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        });
-
-        // Retourner l'utilisateur avec le token
-        return done(null, { user, token });
+        return done(null, result);
       } catch (error) {
         return done(error, null);
       }
@@ -146,10 +122,13 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
       clientID: process.env.MICROSOFT_CLIENT_ID,
       clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
       callbackURL: process.env.MICROSOFT_CALLBACK_URL,
+      passReqToCallback: true,
     },
-    // 5 paramètres : Passport transmet aussi les paramètres de la réponse (dont id_token)
-    async (accessToken, refreshToken, params, profile, done) => {
+    // 6 paramètres : Passport transmet la requête et les paramètres de la réponse (dont id_token)
+    async (req, accessToken, refreshToken, params, profile, done) => {
       try {
+        const linkUserId = getLinkUserId(req, 'microsoft');
+
         // Reçu directement de Microsoft (HTTPS, échange de code) : le contenu peut être lu sans revérifier la signature
         const claims = (params && params.id_token && jwt.decode(params.id_token)) || {};
         const email = String(
@@ -157,45 +136,21 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
         ).trim();
         const microsoftId = String(profile.id || claims.oid || claims.sub || '');
 
-        if (!email.includes('@') || !microsoftId) {
+        if (!microsoftId || (!email.includes('@') && !linkUserId)) {
           return done(new Error("Microsoft n'a fourni ni adresse email ni identifiant utilisateur"), null);
         }
 
-        const name = profile.displayName || claims.name || email.split('@')[0];
+        const result = await handleOAuthProfile(
+          'microsoft',
+          {
+            providerId: microsoftId,
+            email: email.includes('@') ? email : null,
+            name: profile.displayName || claims.name || email.split('@')[0],
+          },
+          linkUserId
+        );
 
-        // Vérifier si l'utilisateur existe déjà avec cet email (sans tenir compte de la casse)
-        let user = await prisma.user.findFirst({
-          where: { email: { equals: email, mode: 'insensitive' } },
-        });
-
-        if (user) {
-          // Si l'utilisateur existe mais n'a pas de microsoftId, le mettre à jour
-          if (!user.microsoftId) {
-            user = await prisma.user.update({
-              where: { id: user.id },
-              data: { microsoftId },
-            });
-          }
-        } else {
-          // Créer un nouvel utilisateur
-          user = await prisma.user.create({
-            data: {
-              email,
-              microsoftId,
-              name,
-            },
-          });
-        }
-
-        // Générer un token JWT
-        const token = generateToken({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        });
-
-        // Retourner l'utilisateur avec le token
-        return done(null, { user, token });
+        return done(null, result);
       } catch (error) {
         return done(error, null);
       }
