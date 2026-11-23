@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const folderRoutes = require('./routes/folderRoutes');
 const fileRoutes = require('./routes/fileRoutes');
 const trashRoutes = require('./routes/trashRoutes');
+const searchRoutes = require('./routes/searchRoutes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 const toPublicUser = require('./utils/publicUser');
@@ -60,6 +61,9 @@ app.use('/api/files', fileRoutes);
 
 // Routes corbeille
 app.use('/api/trash', trashRoutes);
+
+// Routes recherche
+app.use('/api/search', searchRoutes);
 
 // Routes OAuth2
 

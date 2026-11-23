@@ -89,7 +89,7 @@ const StorageBreakdown = ({ categories, storageUsed, storageLimit }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Répartition du stockage</h3>
         <span className="text-sm text-gray-500">
           {formatBytes(storageUsed)} utilisés · {formatBytes(Math.max(0, storageLimit - storageUsed))} restants sur {formatBytes(storageLimit)}

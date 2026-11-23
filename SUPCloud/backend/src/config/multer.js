@@ -35,6 +35,8 @@ const storage = multer.diskStorage({
 // (un service de stockage ne doit pas imposer de liste de formats)
 const upload = multer({
   storage: storage,
+  // Les navigateurs envoient le nom du fichier en UTF-8 : sans cette option, « très » deviendrait « trÃ¨s »
+  defParamCharset: 'utf8',
   limits: {
     fileSize: MAX_FILE_SIZE,
   },

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, LogOut, Settings } from 'lucide-react';
+import { Menu, User, LogOut, Settings } from 'lucide-react';
 import { logout } from '../../store/authSlice';
+import { toggleSidebar } from '../../store/uiSlice';
+import SearchBar from './SearchBar';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -43,10 +45,17 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 h-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-        <div className="flex justify-between items-center h-full">
-          {/* Logo */}
-          <div className="flex items-center">
+      <div className="px-2 sm:px-4 lg:px-6 h-full">
+        <div className="flex justify-between items-center h-full gap-2">
+          {/* Bouton du menu latéral + logo */}
+          <div className="flex items-center flex-shrink-0">
+            <button
+              onClick={() => dispatch(toggleSidebar())}
+              className="p-2 mr-1 sm:mr-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              aria-label="Afficher ou masquer le menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
             <button
               onClick={() => navigate('/home')}
               className="cursor-pointer focus:outline-none"
@@ -54,35 +63,27 @@ const Navbar = () => {
               <img
                 src="/supcloud.png"
                 alt="SUPCloud"
-                className="h-10"
+                className="h-8 sm:h-10"
               />
             </button>
           </div>
 
           {/* Barre de recherche */}
-          <div className="flex-1 max-w-xl mx-8">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Rechercher des fichiers et dossiers..."
-              />
-            </div>
+          <div className="flex-1 min-w-0 max-w-xl sm:mx-4 lg:mx-8">
+            <SearchBar />
           </div>
 
           {/* Menu utilisateur */}
-          <div className="relative" ref={userMenuRef}>
+          <div className="relative flex-shrink-0" ref={userMenuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Menu utilisateur"
+              className="flex items-center space-x-2 p-1 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
                 <User className="h-5 w-5 text-white" />
               </div>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="hidden md:inline text-sm font-medium text-gray-700 max-w-[10rem] truncate">
                 {user?.name || 'Utilisateur'}
               </span>
             </button>

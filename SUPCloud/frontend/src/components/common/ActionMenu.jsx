@@ -82,7 +82,7 @@ const ActionMenu = ({ items }) => {
         aria-haspopup="menu"
         aria-expanded={open}
         className={`p-1 hover:bg-gray-100 rounded-lg transition-opacity ${
-          open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          open ? 'opacity-100' : '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100'
         }`}
       >
         <MoreVertical size={16} className="text-gray-500" />

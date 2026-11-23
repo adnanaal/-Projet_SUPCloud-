@@ -11,6 +11,7 @@ import FolderPage from './pages/FolderPage';
 import RecentsPage from './pages/RecentsPage';
 import TrashPage from './pages/TrashPage';
 import SettingsPage from './pages/SettingsPage';
+import SearchPage from './pages/SearchPage';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -54,6 +55,14 @@ function App() {
           element={
             <ProtectedRoute>
               <RecentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute>
+              <SearchPage />
             </ProtectedRoute>
           }
         />

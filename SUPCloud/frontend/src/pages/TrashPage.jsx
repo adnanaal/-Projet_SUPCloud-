@@ -5,7 +5,7 @@ import { trashService } from '../services/trashService';
 import { addToast } from '../store/uiSlice';
 import { refreshUser } from '../utils/refreshUser';
 import { formatBytes } from '../utils/formatBytes';
-import { File, Folder, Clock, Trash2 } from 'lucide-react';
+import { File, Folder, Clock, Trash2, RotateCcw, XCircle } from 'lucide-react';
 
 const TrashPage = () => {
   const dispatch = useDispatch();
@@ -50,6 +50,14 @@ const TrashPage = () => {
     const diffTime = expiration - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const getExpirationLabel = (expiresAt) => {
+    const daysLeft = getDaysUntilExpiration(expiresAt);
+    if (daysLeft === null) return 'Non disponible';
+    if (daysLeft <= 0) return 'Expiré';
+    if (daysLeft === 1) return 'Expire demain';
+    return `Expire dans ${daysLeft} jours`;
   };
 
   const handleRestore = async (id) => {
@@ -115,7 +123,7 @@ const TrashPage = () => {
 
   return (
     <MainLayout>
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Corbeille</h2>
           <p className="text-gray-600">Les éléments sont supprimés définitivement après 30 jours</p>
@@ -123,7 +131,7 @@ const TrashPage = () => {
         {trashItems.length > 0 && (
           <button
             onClick={handleEmptyTrash}
-            className="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+            className="flex-shrink-0 px-3 sm:px-4 py-2 text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
           >
             Vider la corbeille
           </button>
@@ -150,35 +158,37 @@ const TrashPage = () => {
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Nom</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Type</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Supprimé le</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Expiration</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+                  <th className="text-left px-3 sm:px-6 py-4 text-sm font-semibold text-gray-700">Nom</th>
+                  <th className="hidden sm:table-cell w-28 text-left px-6 py-4 text-sm font-semibold text-gray-700">Type</th>
+                  <th className="hidden lg:table-cell w-52 text-left px-6 py-4 text-sm font-semibold text-gray-700">Supprimé le</th>
+                  <th className="hidden md:table-cell w-36 text-left px-6 py-4 text-sm font-semibold text-gray-700">Expiration</th>
+                  <th className="w-24 sm:w-56 text-right px-3 sm:px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {trashItems.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center space-x-3">
                         {item.type === 'file' ? (
-                          <File className="h-5 w-5 text-gray-400" />
+                          <File className="h-5 w-5 text-gray-400 flex-shrink-0" />
                         ) : (
-                          <Folder className="h-5 w-5 text-gray-400" />
+                          <Folder className="h-5 w-5 text-gray-400 flex-shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <span className="block font-medium text-gray-900 truncate max-w-xs" title={item.name}>{item.name}</span>
+                          <span className="block font-medium text-gray-900 truncate" title={item.name}>{item.name}</span>
                           {item.type === 'file' && item.size != null && (
                             <span className="block text-xs text-gray-500">{formatBytes(item.size)}</span>
                           )}
+                          {/* Petit écran : l'expiration est affichée sous le nom */}
+                          <span className="block text-xs text-gray-500 md:hidden">{getExpirationLabel(item.expiresAt)}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="hidden sm:table-cell px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         item.type === 'file'
                           ? 'bg-blue-100 text-blue-800'
@@ -187,34 +197,34 @@ const TrashPage = () => {
                         {item.type === 'file' ? 'Fichier' : 'Dossier'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="hidden lg:table-cell px-6 py-4 text-sm text-gray-600">
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-gray-400" />
                         <span>{formatDate(item.createdAt)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {(() => {
-                        const daysLeft = getDaysUntilExpiration(item.expiresAt);
-                        if (daysLeft === null) return 'Non disponible';
-                        if (daysLeft <= 0) return 'Expiré';
-                        if (daysLeft === 1) return 'Demain';
-                        return `Dans ${daysLeft} jours`;
-                      })()}
+                    <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-600">
+                      {getExpirationLabel(item.expiresAt)}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
+                    <td className="px-3 sm:px-6 py-4 text-right">
+                      <div className="flex items-center justify-end space-x-1 sm:space-x-2">
                         <button
                           onClick={() => handleRestore(item.id)}
-                          className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          aria-label="Restaurer"
+                          title="Restaurer"
+                          className="flex items-center p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                         >
-                          Restaurer
+                          <RotateCcw className="h-4 w-4 sm:hidden" />
+                          <span className="hidden sm:inline">Restaurer</span>
                         </button>
                         <button
                           onClick={() => handleDeletePermanently(item.id)}
-                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          aria-label="Supprimer définitivement"
+                          title="Supprimer définitivement"
+                          className="flex items-center p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          Supprimer
+                          <XCircle className="h-4 w-4 sm:hidden" />
+                          <span className="hidden sm:inline">Supprimer</span>
                         </button>
                       </div>
                     </td>

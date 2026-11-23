@@ -52,7 +52,7 @@ const LINK_ERRORS = {
 
 // Ligne d'un mode de connexion : fournisseur, état (connecté ou non) et action éventuelle
 const ConnectionRow = ({ icon, name, description, connected, action }) => (
-  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
     <div className="flex items-center space-x-3 min-w-0">
       <div className="flex-shrink-0">{icon}</div>
       <div className="min-w-0">
@@ -60,7 +60,7 @@ const ConnectionRow = ({ icon, name, description, connected, action }) => (
         <p className="text-sm text-gray-500 truncate">{description}</p>
       </div>
     </div>
-    <div className="flex items-center space-x-3 flex-shrink-0 ml-3">
+    <div className="flex items-center justify-between sm:justify-end space-x-3 flex-shrink-0 pl-9 sm:pl-0 sm:ml-3">
       <span
         className={`px-3 py-1 rounded-full text-sm font-medium ${
           connected ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'

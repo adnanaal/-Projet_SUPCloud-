@@ -1,7 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Écrans larges (≥ 1024 px, « lg ») : menu latéral ouvert à côté du contenu ; plus petits : tiroir fermé par défaut
+export const DESKTOP_BREAKPOINT = 1024;
+export const isDesktopScreen = () => typeof window === 'undefined' || window.innerWidth >= DESKTOP_BREAKPOINT;
+
 const initialState = {
-  sidebarOpen: true,
+  sidebarOpen: isDesktopScreen(),
   uploadModalOpen: false,
   createFolderModalOpen: false,
   renameModalOpen: false,

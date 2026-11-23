@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Folder, Trash2, Clock, HardDrive, Settings as SettingsIcon } from 'lucide-react';
-import { toggleSidebar } from '../../store/uiSlice';
+import { setSidebarOpen, isDesktopScreen } from '../../store/uiSlice';
 import { formatBytes } from '../../utils/formatBytes';
 import { getStorageInfo } from '../../utils/storage';
 
@@ -25,9 +25,10 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 overflow-y-auto transition-all duration-300 ${
-        sidebarOpen ? 'w-64' : 'w-0'
+      className={`bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40 w-64 overflow-y-auto transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
+      aria-hidden={!sidebarOpen}
     >
       <nav className="px-2 space-y-1">
         {navItems.map((item) => {
@@ -40,6 +41,8 @@ const Sidebar = () => {
               onClick={(e) => {
                 e.preventDefault();
                 navigate(item.path);
+                // Petit écran : refermer le tiroir après avoir choisi une page
+                if (!isDesktopScreen()) dispatch(setSidebarOpen(false));
               }}
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
                 isActive
