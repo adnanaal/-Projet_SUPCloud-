@@ -11,15 +11,23 @@ const PROVIDER_FIELDS = {
 /**
  * Connexion : retrouver le compte par identifiant du fournisseur d'abord (compte déjà rattaché,
  * même avec une autre adresse email), puis par email (rattachement automatique), sinon le créer.
+ * Le rattachement automatique exige un email vérifié par le fournisseur : sinon n'importe qui
+ * pourrait déclarer l'adresse d'un utilisateur chez un fournisseur et entrer dans son compte.
  */
-const loginOrCreate = async (field, { providerId, email, name, avatar }) => {
+const loginOrCreate = async (field, { providerId, email, emailVerified, name, avatar }) => {
   let user = await prisma.user.findFirst({ where: { [field]: providerId } });
 
   if (!user && email) {
-    // Rattachement automatique à un compte existant avec le même email (sans tenir compte de la casse)
+    // Compte existant avec le même email (sans tenir compte de la casse)
     user = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
 
-    if (user && !user[field]) {
+    if (user) {
+      // Email non vérifié, ou compte déjà rattaché à un autre compte de ce fournisseur :
+      // l'utilisateur doit se connecter autrement puis rattacher ce compte depuis Paramètres
+      if (emailVerified !== true || user[field]) {
+        return { error: 'email_in_use' };
+      }
+
       user = await prisma.user.update({
         where: { id: user.id },
         data: { [field]: providerId, avatar: avatar || user.avatar },

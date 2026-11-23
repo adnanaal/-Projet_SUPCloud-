@@ -47,6 +47,7 @@ passport.use(
           {
             providerId: profile.id,
             email,
+            emailVerified: profile.emails[0].verified === true || profile.emails[0].verified === 'true',
             name: profile.displayName || (profile.name && profile.name.givenName),
             avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
           },
@@ -96,6 +97,7 @@ passport.use(
           {
             providerId: profile.id,
             email,
+            emailVerified: Boolean(emailEntry && emailEntry.verified),
             name: profile.displayName || profile.username,
             avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
           },
@@ -109,6 +111,17 @@ passport.use(
     }
   )
 );
+
+// Annuaire des comptes Microsoft personnels : leur adresse est vérifiée par Microsoft
+const MICROSOFT_PERSONAL_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad';
+
+/**
+ * Chez Microsoft, l'email d'un compte professionnel ou scolaire est choisi par l'administrateur de
+ * l'organisation, qui peut y mettre n'importe quelle adresse. Il n'est considéré comme vérifié que
+ * pour un compte personnel, ou si Microsoft indique que l'organisation possède le domaine (xms_edov).
+ */
+const isMicrosoftEmailVerified = (claims) =>
+  claims.tid === MICROSOFT_PERSONAL_TENANT || [true, 'true', 1, '1'].includes(claims.xms_edov);
 
 // Configuration de la stratégie Microsoft (Microsoft Entra ID, points d'accès v2.0 :
 // comptes professionnels, scolaires et personnels) - uniquement si configurée
@@ -145,6 +158,7 @@ if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
           {
             providerId: microsoftId,
             email: email.includes('@') ? email : null,
+            emailVerified: isMicrosoftEmailVerified(claims),
             name: profile.displayName || claims.name || email.split('@')[0],
           },
           linkUserId

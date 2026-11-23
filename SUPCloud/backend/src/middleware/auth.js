@@ -12,6 +12,8 @@ const authMiddleware = (req, res, next) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         error: 'Non authentifié',
+        // Permet au client de distinguer une session invalide d'un mot de passe incorrect
+        code: 'SESSION_INVALID',
         message: 'Token manquant ou invalide',
       });
     }
@@ -34,6 +36,8 @@ const authMiddleware = (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       error: 'Non authentifié',
+        // Permet au client de distinguer une session invalide d'un mot de passe incorrect
+        code: 'SESSION_INVALID',
       message: 'Token invalide ou expiré',
     });
   }

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const passport = require('./config/passport');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
@@ -26,10 +27,18 @@ const CORS_ORIGINS = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'h
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
+// Derrière un proxy inverse (nginx, Docker...) : TRUST_PROXY=1 pour lire la vraie adresse IP du client
+if (process.env.TRUST_PROXY) {
+  const hops = Number(process.env.TRUST_PROXY);
+  app.set('trust proxy', Number.isNaN(hops) ? process.env.TRUST_PROXY : hops);
+}
+
 // Middleware
+// En-têtes de sécurité HTTP (anti-sniffing MIME, interdiction d'affichage dans un cadre, HSTS...)
+app.use(helmet());
 app.use(cors({ origin: CORS_ORIGINS }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // Initialiser Passport
 app.use(passport.initialize());
@@ -128,7 +137,7 @@ const oauthCallback = (provider) => (req, res, next) =>
       console.error(`Rattachement OAuth2 refusé (${provider}) : ${result.error}`);
       return linking
         ? res.redirect(settingsRedirect({ oauth: 'error', reason: result.error }))
-        : res.redirect(OAUTH_FAILURE_REDIRECT);
+        : res.redirect(`${OAUTH_FAILURE_REDIRECT}&reason=${encodeURIComponent(result.error)}`);
     }
 
     req.oauthResult = result;

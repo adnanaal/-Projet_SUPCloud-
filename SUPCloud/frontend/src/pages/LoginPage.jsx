@@ -18,11 +18,14 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(() =>
-    new URLSearchParams(window.location.search).get('error') === 'oauth'
-      ? 'La connexion avec le service externe a échoué ou a été annulée. Veuillez réessayer.'
-      : ''
-  );
+  const [error, setError] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session') === 'expired') return 'Votre session a expiré. Veuillez vous reconnecter.';
+    if (params.get('error') !== 'oauth') return '';
+    return params.get('reason') === 'email_in_use'
+      ? "Un compte SUPCloud existe déjà avec cette adresse email, mais elle n'a pas pu être confirmée auprès du service externe. Connectez-vous avec votre méthode habituelle, puis rattachez ce compte depuis Paramètres, section « Comptes connectés »."
+      : 'La connexion avec le service externe a échoué ou a été annulée. Veuillez réessayer.';
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const toPublicUser = require('../utils/publicUser');
 const { generateLinkToken } = require('../config/jwt');
 const { PROVIDER_FIELDS } = require('../utils/oauthAccount');
+const { deletePhysicalFiles } = require('../utils/trash');
 
 const PROVIDER_LABELS = { google: 'Google', github: 'GitHub', microsoft: 'Microsoft' };
 
@@ -259,10 +260,19 @@ const deleteAccount = async (req, res, next) => {
       }
     }
 
-    // Supprimer l'utilisateur (cascade supprimera les fichiers, dossiers, etc.)
+    // Chemins des fichiers physiques, relevés avant la suppression des métadonnées
+    const files = await prisma.file.findMany({
+      where: { userId: req.user.id },
+      select: { path: true },
+    });
+
+    // Supprimer l'utilisateur (cascade : fichiers, dossiers et corbeille en base)
     await prisma.user.delete({
       where: { id: req.user.id },
     });
+
+    // Puis les fichiers sur le disque : rien n'est effacé si la suppression en base échoue
+    deletePhysicalFiles(files);
 
     res.status(200).json({
       message: 'Compte supprimé avec succès',
