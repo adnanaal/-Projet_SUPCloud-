@@ -3,7 +3,10 @@ const path = require('path');
 const fs = require('fs');
 
 // Dossier de stockage absolu (indépendant du répertoire de travail du processus)
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+// Dossier de stockage : UPLOAD_DIR (ex. volume Docker), sinon backend/uploads
+const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '..', '..', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // Quota par défaut d'un utilisateur : 30 Go

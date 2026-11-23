@@ -17,10 +17,16 @@ const app = express();
 
 // En cas d'échec ou d'annulation de la connexion OAuth2, retour sur la page de connexion du frontend
 const OAUTH_FAILURE_REDIRECT = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=oauth`;
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+// Origines autorisées à appeler l'API : CORS_ORIGINS (liste séparée par des virgules), sinon l'URL du frontend
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: CORS_ORIGINS }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
