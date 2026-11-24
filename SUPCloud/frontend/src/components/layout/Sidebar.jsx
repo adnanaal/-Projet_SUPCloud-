@@ -25,12 +25,12 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`bg-white border-r border-gray-200 fixed left-0 top-16 bottom-0 z-40 w-64 overflow-y-auto transition-transform duration-300 ${
+      className={`bg-white/90 backdrop-blur-lg border-r border-gray-200/70 fixed left-0 top-16 bottom-0 z-40 w-64 overflow-y-auto transition-transform duration-300 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
       aria-hidden={!sidebarOpen}
     >
-      <nav className="px-2 space-y-1">
+      <nav className="px-3 pt-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -44,13 +44,16 @@ const Sidebar = () => {
                 // Petit écran : refermer le tiroir après avoir choisi une page
                 if (!isDesktopScreen()) dispatch(setSidebarOpen(false));
               }}
-              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+              className={`group relative flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 ${
                 isActive
-                  ? 'text-indigo-600 bg-indigo-50'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'text-brand-700 bg-gradient-to-r from-brand-50 to-brand-100/70 shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
               }`}
             >
-              <Icon className="h-5 w-5 mr-3" />
+              {isActive && (
+                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-brand-500 to-brand-700" />
+              )}
+              <Icon className={`h-5 w-5 mr-3 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-brand-600' : ''}`} />
               <span className="font-medium">{item.label}</span>
             </a>
           );
@@ -58,7 +61,8 @@ const Sidebar = () => {
       </nav>
 
       {/* Indicateur de stockage en bas */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+      <div className="absolute bottom-0 left-0 right-0 p-3">
+        <div className="rounded-xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-3">
         <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
           <span className="flex items-center">
             <HardDrive className="h-4 w-4 mr-1" />
@@ -66,9 +70,9 @@ const Sidebar = () => {
           </span>
           <span>{storage.percentLabel}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-brand-100 rounded-full h-2 overflow-hidden">
           <div
-            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-brand-500 to-brand-700 h-2 rounded-full transition-all duration-700"
             style={{ width: `${storage.used > 0 ? Math.max(storage.percent, 0.5) : 0}%` }}
           />
         </div>
@@ -77,6 +81,7 @@ const Sidebar = () => {
         </div>
         <div className="text-xs text-gray-500">
           <span className="font-medium text-green-700">{formatBytes(storage.remaining)}</span> restants
+        </div>
         </div>
       </div>
     </aside>

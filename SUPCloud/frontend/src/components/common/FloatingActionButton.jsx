@@ -82,7 +82,7 @@ const FloatingActionButton = () => {
       {/* Bouton principal */}
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className={`w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-200 flex items-center justify-center ${
+        className={`w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-700 text-white rounded-full shadow-lg shadow-brand-600/40 hover:shadow-xl hover:shadow-brand-600/50 hover:scale-105 transition-all duration-200 flex items-center justify-center ${
           isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab'
         } ${showDropdown ? 'rotate-45' : ''}`}
       >
@@ -91,17 +91,17 @@ const FloatingActionButton = () => {
 
       {/* Dropdown menu */}
       {showDropdown && (
-        <div className="dropdown-menu absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+        <div className="dropdown-menu absolute bottom-16 right-0 w-52 origin-bottom-right animate-scale-in bg-white rounded-xl shadow-xl shadow-brand-900/10 border border-gray-100 py-2 z-50">
           <button
             onClick={handleNewFile}
-            className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
           >
             <File className="h-5 w-5 mr-3" />
             <span>Nouveau fichier</span>
           </button>
           <button
             onClick={handleNewFolder}
-            className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
           >
             <FolderPlus className="h-5 w-5 mr-3" />
             <span>Nouveau dossier</span>

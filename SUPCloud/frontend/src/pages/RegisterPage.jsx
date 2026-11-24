@@ -4,6 +4,7 @@ import { LogIn, UserPlus, Lock, Mail } from 'lucide-react';
 import { register } from '../services/authService';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../store/authSlice';
+import AuthLayout from '../components/layout/AuthLayout';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -53,25 +54,10 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="cursor-pointer focus:outline-none"
-          >
-            <img
-              src="/logo.jpg"
-              alt="Logo"
-              className="h-20 mx-auto"
-            />
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900 mt-4">Créer un compte</h1>
-          <p className="text-gray-600 mt-2">Rejoignez SUPCloud</p>
-        </div>
+    <AuthLayout title="Créer un compte" subtitle="Rejoignez SUPCloud et profitez de 30 Go offerts">
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="animate-fade-in bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
             {error}
           </div>
         )}
@@ -91,7 +77,7 @@ const RegisterPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl bg-white/80 transition focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500"
                 placeholder="Votre nom"
               />
             </div>
@@ -111,7 +97,7 @@ const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl bg-white/80 transition focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500"
                 placeholder="votre@email.com"
               />
             </div>
@@ -131,7 +117,7 @@ const RegisterPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl bg-white/80 transition focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500"
                 placeholder="••••••••"
               />
             </div>
@@ -151,7 +137,7 @@ const RegisterPage = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl bg-white/80 transition focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500"
                 placeholder="••••••••"
               />
             </div>
@@ -160,7 +146,7 @@ const RegisterPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-gradient-to-r from-brand-600 to-brand-700 text-white py-3 rounded-xl font-semibold shadow-lg shadow-brand-600/30 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-600/40 focus:ring-4 focus:ring-brand-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {loading ? 'Inscription en cours...' : 'S\'inscrire'}
           </button>
@@ -169,13 +155,12 @@ const RegisterPage = () => {
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             Déjà un compte ?{' '}
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link to="/login" className="text-brand-600 hover:text-brand-700 font-medium">
               Se connecter
             </Link>
           </p>
         </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 };
 

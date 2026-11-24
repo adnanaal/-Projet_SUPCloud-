@@ -115,8 +115,8 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="animate-scale-in bg-white rounded-2xl shadow-2xl shadow-brand-900/20 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Uploader des fichiers</h2>
@@ -136,7 +136,7 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors mb-6"
+            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-colors mb-6"
           >
             <UploadIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-2">
@@ -198,7 +198,7 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
                       {uploading && (
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                           <div
-                            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-brand-600 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -230,7 +230,7 @@ const UploadModal = ({ isOpen, onClose, currentFolderId = null }) => {
           <button
             onClick={handleUpload}
             disabled={uploading || selectedFiles.length === 0}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? 'Upload en cours...' : 'Uploader'}
           </button>

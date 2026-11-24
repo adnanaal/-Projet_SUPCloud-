@@ -270,8 +270,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-brand-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="animate-scale-in bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 truncate flex-1 mr-4">
@@ -299,8 +299,8 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
         <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-gray-50 relative">
           {loading ? (
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
               </div>
               <p className="text-gray-600">Chargement...</p>
             </div>
@@ -313,7 +313,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                 )}
                 <button
                   onClick={handleRetry}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
                 >
                   Réessayer
                 </button>
@@ -332,7 +332,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                 <p className="text-xs text-gray-400 mb-4">{file?.mimeType}</p>
                 <button
                   onClick={handleDownload}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
                 >
                   Télécharger le fichier
                 </button>
@@ -419,7 +419,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                       onLoadError={onDocumentLoadError}
                       loading={
                         <div className="p-8 text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mx-auto mb-2"></div>
                           <p className="text-gray-600">Chargement du PDF...</p>
                         </div>
                       }
@@ -477,7 +477,7 @@ const FileViewerModal = ({ isOpen, onClose, file, files = [], onNavigate }) => {
                     <p className="text-sm text-gray-500 mb-4">Ce type de fichier ne peut pas être prévisualisé.</p>
                     <button
                       onClick={handleDownload}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
                     >
                       Télécharger le fichier
                     </button>

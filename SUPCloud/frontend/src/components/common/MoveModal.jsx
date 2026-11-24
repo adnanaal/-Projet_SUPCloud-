@@ -84,8 +84,8 @@ const MoveModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4" role="dialog" aria-label="Déplacer vers">
+    <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="animate-scale-in bg-white rounded-2xl shadow-2xl shadow-brand-900/20 w-full max-w-lg mx-4" role="dialog" aria-label="Déplacer vers">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="min-w-0">
@@ -111,7 +111,7 @@ const MoveModal = () => {
             <button
               onClick={() => setPath([])}
               className={`flex items-center px-2 py-1 rounded hover:bg-gray-100 ${
-                path.length === 0 ? 'font-semibold text-indigo-600' : 'text-gray-600'
+                path.length === 0 ? 'font-semibold text-brand-600' : 'text-gray-600'
               }`}
             >
               <Home size={14} className="mr-1" />
@@ -123,7 +123,7 @@ const MoveModal = () => {
                 <button
                   onClick={() => setPath(path.slice(0, index + 1))}
                   className={`px-2 py-1 rounded hover:bg-gray-100 ${
-                    index === path.length - 1 ? 'font-semibold text-indigo-600' : 'text-gray-600'
+                    index === path.length - 1 ? 'font-semibold text-brand-600' : 'text-gray-600'
                   }`}
                 >
                   {step.name}
@@ -136,7 +136,7 @@ const MoveModal = () => {
           <div className="border border-gray-200 rounded-lg h-64 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-600"></div>
               </div>
             ) : visibleFolders.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
@@ -149,10 +149,10 @@ const MoveModal = () => {
                   <li key={folder.id}>
                     <button
                       onClick={() => setPath([...path, { id: folder.id, name: folder.name }])}
-                      className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-indigo-50 border-b border-gray-100 last:border-b-0"
+                      className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-brand-50 border-b border-gray-100 last:border-b-0"
                     >
                       <span className="flex items-center min-w-0">
-                        <Folder size={18} className="text-indigo-600 mr-3 flex-shrink-0" />
+                        <Folder size={18} className="text-brand-600 mr-3 flex-shrink-0" />
                         <span className="truncate text-sm font-medium text-gray-900" title={folder.name}>
                           {folder.name}
                         </span>
@@ -186,7 +186,7 @@ const MoveModal = () => {
             onClick={handleMove}
             disabled={moving || loading || alreadyHere}
             title={`Déplacer vers « ${destinationName} »`}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {moving ? 'Déplacement...' : 'Déplacer ici'}
           </button>

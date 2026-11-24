@@ -83,14 +83,14 @@ const SearchPage = () => {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
           </div>
           <p className="text-gray-600">Chargement...</p>
         </div>
       ) : query && total === 0 ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
             <Search className="h-8 w-8 text-gray-400" />
           </div>
           <p className="text-gray-600 mb-2">Aucun fichier ni dossier ne correspond à « {query} »</p>
@@ -108,7 +108,7 @@ const SearchPage = () => {
                     onClick={() => navigate(`/folders/${folder.id}`)}
                     className="w-full flex items-center px-4 sm:px-6 py-3 text-left hover:bg-gray-50"
                   >
-                    <Folder className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                    <Folder className="h-5 w-5 text-brand-600 flex-shrink-0" />
                     <span className="ml-4 min-w-0 flex-1">
                       <span className="block text-sm font-medium text-gray-900 truncate" title={folder.name}>{folder.name}</span>
                       <span className="block text-xs text-gray-500 truncate">

@@ -93,7 +93,7 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group min-w-0 ${
+      className={`bg-white rounded-xl shadow-sm border border-gray-200/80 hover:border-brand-200 hover:shadow-lg hover:shadow-brand-500/10 transition-all duration-200 cursor-pointer group min-w-0 ${
         isDragging ? 'opacity-50 scale-95' : ''
       }`}
       draggable
@@ -105,8 +105,8 @@ const FileCard = ({ file, onDragStart, onDragEnd, isDragging }) => {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-indigo-50 rounded-lg flex-shrink-0">
-                <FileIcon type={file.mimeType} size={32} className="text-indigo-600" />
+              <div className="p-2 bg-gradient-to-br from-brand-50 to-brand-100 rounded-lg flex-shrink-0 transition-transform duration-200 group-hover:scale-110">
+                <FileIcon type={file.mimeType} size={32} className="text-brand-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-medium text-gray-900 truncate" title={file.name}>

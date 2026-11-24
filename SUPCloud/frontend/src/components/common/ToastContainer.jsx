@@ -18,7 +18,7 @@ const ToastContainer = () => {
   }, [toasts, dispatch]);
 
   const bgColor = {
-    info: 'bg-blue-500',
+    info: 'bg-brand-600',
     success: 'bg-green-500',
     error: 'bg-red-500',
     warning: 'bg-yellow-500',
@@ -29,7 +29,7 @@ const ToastContainer = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`${bgColor[toast.type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 animate-in slide-in-from-right fade-in duration-300`}
+          className={`${bgColor[toast.type]} text-white px-5 py-3 rounded-xl shadow-xl shadow-brand-900/20 flex items-center space-x-3 animate-slide-in-right`}
         >
           <span>{toast.message}</span>
           <button

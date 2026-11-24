@@ -5,8 +5,8 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4 animate-in fade-in zoom-in duration-200">
+      <div className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4 animate-scale-in">
         {title && (
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{title}</h2>

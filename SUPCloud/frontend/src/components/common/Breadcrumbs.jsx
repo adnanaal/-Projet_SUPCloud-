@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { ChevronRight, Home } from 'lucide-react';
 import { getDraggedItem, isSupCloudDrag, moveItemToFolder } from '../../utils/moveItem';
 
-const dropTargetClass = 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300';
+const dropTargetClass = 'bg-brand-100 text-brand-700 ring-2 ring-brand-300';
 
 // Élément du fil d'Ariane, cible de dépôt si targetFolderId est défini (null = racine)
 const DropZone = ({ enabled, targetFolderId, children, className = '', ...props }) => {
@@ -48,7 +48,7 @@ const Breadcrumbs = ({ items = [] }) => {
     <nav className="flex items-center space-x-2 text-sm mb-6">
       <button
         onClick={() => navigate('/home')}
-        className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors"
+        className="flex items-center text-gray-500 hover:text-brand-600 transition-colors"
         title="Accueil"
       >
         <Home size={16} />
@@ -65,7 +65,7 @@ const Breadcrumbs = ({ items = [] }) => {
             >
               <button
                 onClick={() => navigate(item.path)}
-                className="text-gray-500 hover:text-indigo-600 transition-colors"
+                className="text-gray-500 hover:text-brand-600 transition-colors"
               >
                 {item.label}
               </button>

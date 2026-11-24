@@ -140,14 +140,14 @@ const TrashPage = () => {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
           </div>
           <p className="text-gray-600">Chargement...</p>
         </div>
       ) : trashItems.length === 0 ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
             <Trash2 className="h-8 w-8 text-gray-400" />
           </div>
           <p className="text-gray-600 mb-2">La corbeille est vide</p>
@@ -191,8 +191,8 @@ const TrashPage = () => {
                     <td className="hidden sm:table-cell px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         item.type === 'file'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-indigo-100 text-indigo-800'
+                          ? 'bg-brand-100 text-brand-800'
+                          : 'bg-brand-100 text-brand-800'
                       }`}>
                         {item.type === 'file' ? 'Fichier' : 'Dossier'}
                       </span>
@@ -212,7 +212,7 @@ const TrashPage = () => {
                           onClick={() => handleRestore(item.id)}
                           aria-label="Restaurer"
                           title="Restaurer"
-                          className="flex items-center p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="flex items-center p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                         >
                           <RotateCcw className="h-4 w-4 sm:hidden" />
                           <span className="hidden sm:inline">Restaurer</span>

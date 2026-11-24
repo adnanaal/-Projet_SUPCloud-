@@ -12,7 +12,7 @@ import { formatBytes } from '../utils/formatBytes';
 import { getStorageInfo } from '../utils/storage';
 
 const inputClass =
-  'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500';
 
 const EMPTY_PASSWORD_FORM = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
@@ -76,7 +76,7 @@ const ConnectionRow = ({ icon, name, description, connected, action }) => (
           className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             action.danger
               ? 'text-red-600 border-red-200 hover:bg-red-50'
-              : 'text-indigo-600 border-indigo-200 hover:bg-indigo-50'
+              : 'text-brand-600 border-brand-200 hover:bg-brand-50'
           }`}
         >
           {action.label}
@@ -289,13 +289,13 @@ const SettingsPage = () => {
         {/* Stockage */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center space-x-2 mb-4">
-            <HardDrive className="h-5 w-5 text-indigo-600" />
+            <HardDrive className="h-5 w-5 text-brand-600" />
             <h3 className="text-lg font-semibold text-gray-900">Stockage</h3>
           </div>
 
           <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
             <div
-              className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
+              className="bg-brand-600 h-3 rounded-full transition-all duration-300"
               style={{ width: `${storage.used > 0 ? Math.max(storage.percent, 0.5) : 0}%` }}
             />
           </div>
@@ -324,7 +324,7 @@ const SettingsPage = () => {
             {!isEditingProfile && (
               <button
                 onClick={handleProfileEdit}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
               >
                 <Edit size={16} />
                 <span>Modifier</span>
@@ -365,7 +365,7 @@ const SettingsPage = () => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleProfileSave}
-                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
                 >
                   <Save size={16} />
                   <span>Enregistrer</span>
@@ -382,7 +382,7 @@ const SettingsPage = () => {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <User className="h-5 w-5 text-indigo-600" />
+                <User className="h-5 w-5 text-brand-600" />
                 <div>
                   <p className="text-sm text-gray-500">Nom</p>
                   <p className="font-medium text-gray-900">{user?.name || 'Non disponible'}</p>
@@ -390,7 +390,7 @@ const SettingsPage = () => {
               </div>
 
               <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <Mail className="h-5 w-5 text-indigo-600" />
+                <Mail className="h-5 w-5 text-brand-600" />
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
                   <p className="font-medium text-gray-900">{user?.email || 'Non disponible'}</p>
@@ -398,7 +398,7 @@ const SettingsPage = () => {
               </div>
 
               <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-indigo-600" />
+                <Calendar className="h-5 w-5 text-brand-600" />
                 <div>
                   <p className="text-sm text-gray-500">Membre depuis</p>
                   <p className="font-medium text-gray-900">{formatDate(user?.createdAt)}</p>
@@ -411,7 +411,7 @@ const SettingsPage = () => {
         {/* Comptes connectés : modes de connexion rattachés à ce compte */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center space-x-2 mb-2">
-            <Link2 className="h-5 w-5 text-indigo-600" />
+            <Link2 className="h-5 w-5 text-brand-600" />
             <h3 className="text-lg font-semibold text-gray-900">Comptes connectés</h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
@@ -422,7 +422,7 @@ const SettingsPage = () => {
 
           <div className="space-y-3" data-testid="linked-accounts">
             <ConnectionRow
-              icon={<KeyRound className="h-6 w-6 text-indigo-600" />}
+              icon={<KeyRound className="h-6 w-6 text-brand-600" />}
               name="Email et mot de passe"
               description={user?.email || ''}
               connected={user?.hasPassword === true}
@@ -454,7 +454,7 @@ const SettingsPage = () => {
         {/* Mot de passe */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center space-x-2 mb-6">
-            <Lock className="h-5 w-5 text-indigo-600" />
+            <Lock className="h-5 w-5 text-brand-600" />
             <h3 className="text-lg font-semibold text-gray-900">Mot de passe</h3>
           </div>
 
@@ -509,7 +509,7 @@ const SettingsPage = () => {
               <button
                 type="submit"
                 disabled={passwordLoading}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
                 <span>{passwordLoading ? 'Enregistrement...' : 'Modifier le mot de passe'}</span>
@@ -540,8 +540,8 @@ const SettingsPage = () => {
 
       {/* Modal de confirmation de suppression */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="animate-scale-in bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
                 <AlertTriangle className="h-6 w-6 text-red-600" />

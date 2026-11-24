@@ -34,10 +34,15 @@ const OAuthCallback = () => {
   }, [dispatch, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Traitement de la connexion...</p>
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-sky-50 flex items-center justify-center">
+      <div className="text-center animate-scale-in">
+        <div className="relative mx-auto h-20 w-20">
+          <span className="absolute inset-0 rounded-full bg-brand-400/30 animate-pulse-ring" />
+          <span className="absolute inset-0 rounded-full border-4 border-brand-100 border-t-brand-600 animate-spin" />
+          <img src="/supcloud.png" alt="" className="absolute inset-0 m-auto h-9 w-auto" />
+        </div>
+        <p className="mt-6 font-medium text-gray-700">Connexion en cours...</p>
+        <p className="mt-1 text-sm text-gray-500">Vous allez être redirigé vers votre espace</p>
       </div>
     </div>
   );

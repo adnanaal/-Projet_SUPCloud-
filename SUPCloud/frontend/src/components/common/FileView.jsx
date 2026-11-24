@@ -87,7 +87,7 @@ const FileView = ({
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100'
+              viewMode === 'grid' ? 'bg-brand-100 text-brand-600' : 'text-gray-500 hover:bg-gray-100'
             }`}
             title="Vue grille"
           >
@@ -96,7 +96,7 @@ const FileView = ({
           <button
             onClick={() => setViewMode('list')}
             className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100'
+              viewMode === 'list' ? 'bg-brand-100 text-brand-600' : 'text-gray-500 hover:bg-gray-100'
             }`}
             title="Vue liste"
           >
@@ -118,7 +118,7 @@ const FileView = ({
                 <button
                   onClick={() => handleSortBy('name')}
                   className={`w-full flex items-center px-3 py-2 text-sm ${
-                    sortBy === 'name' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                    sortBy === 'name' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <span>Nom</span>
@@ -126,7 +126,7 @@ const FileView = ({
                 <button
                   onClick={() => handleSortBy('type')}
                   className={`w-full flex items-center px-3 py-2 text-sm ${
-                    sortBy === 'type' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                    sortBy === 'type' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <span>Type</span>
@@ -134,7 +134,7 @@ const FileView = ({
                 <button
                   onClick={() => handleSortBy('date')}
                   className={`w-full flex items-center px-3 py-2 text-sm ${
-                    sortBy === 'date' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100'
+                    sortBy === 'date' ? 'bg-brand-50 text-brand-600' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <span>Date</span>
@@ -157,7 +157,7 @@ const FileView = ({
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
             Dossiers
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {sortedFolders.map((folder) => (
               <FolderCard
                 key={folder.id}
@@ -178,7 +178,7 @@ const FileView = ({
             Fichiers
           </h3>
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {sortedFiles.map((file) => (
                 <FileCard
                   key={file.id}
@@ -198,7 +198,7 @@ const FileView = ({
       {/* État vide */}
       {folders.length === 0 && files.length === 0 && (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
             <svg
               className="w-8 h-8 text-gray-400"
               fill="none"

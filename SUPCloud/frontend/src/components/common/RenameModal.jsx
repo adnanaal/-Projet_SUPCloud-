@@ -66,8 +66,8 @@ const RenameModal = ({ isOpen, onClose, item, itemType }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-brand-950/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="animate-scale-in bg-white rounded-2xl shadow-2xl shadow-brand-900/20 w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
@@ -95,7 +95,7 @@ const RenameModal = ({ isOpen, onClose, item, itemType }) => {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={item.name}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 disabled={loading}
                 autoFocus
               />
@@ -105,7 +105,7 @@ const RenameModal = ({ isOpen, onClose, item, itemType }) => {
             </div>
 
             <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg mb-4">
-              <Edit className="h-5 w-5 text-indigo-600 mt-0.5" />
+              <Edit className="h-5 w-5 text-brand-600 mt-0.5" />
               <div>
                 <p className="text-sm text-gray-600">
                   {itemType === 'file' ? `Fichier actuel : ${item.name}` : `Dossier actuel : ${item.name}`}
@@ -127,7 +127,7 @@ const RenameModal = ({ isOpen, onClose, item, itemType }) => {
           <button
             onClick={handleSubmit}
             disabled={loading || !newName.trim()}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Renommage...' : 'Renommer'}
           </button>

@@ -140,7 +140,7 @@ const FileListItem = ({ file, variant = 'default' }) => {
       <td className={`px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap ${isRecent ? 'md:w-[40%]' : ''}`}>
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <FileIcon type={file.mimeType} size={20} className="text-indigo-600" />
+            <FileIcon type={file.mimeType} size={20} className="text-brand-600" />
           </div>
           <div className="ml-3 sm:ml-4 min-w-0">
             <div className="text-sm font-medium text-gray-900 truncate" title={file.name}>
@@ -162,7 +162,7 @@ const FileListItem = ({ file, variant = 'default' }) => {
                 e.stopPropagation();
                 navigate(file.folder ? `/folders/${file.folder.id}` : '/files');
               }}
-              className="flex items-center max-w-full text-sm text-gray-500 hover:text-indigo-600"
+              className="flex items-center max-w-full text-sm text-gray-500 hover:text-brand-600"
               title={file.folder ? file.folder.name : 'Mes fichiers'}
             >
               <Folder size={16} className="mr-2 flex-shrink-0" />

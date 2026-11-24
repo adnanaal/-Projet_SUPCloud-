@@ -130,7 +130,7 @@ const SearchBar = () => {
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         maxLength={100}
-        className="block w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 [&::-webkit-search-cancel-button]:hidden"
+        className="block w-full pl-10 pr-9 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 [&::-webkit-search-cancel-button]:hidden"
         placeholder="Rechercher..."
       />
       {query && (
@@ -159,9 +159,9 @@ const SearchBar = () => {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => openSuggestion(suggestion)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`w-full flex items-center px-4 py-2 text-left ${index === activeIndex ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                className={`w-full flex items-center px-4 py-2 text-left ${index === activeIndex ? 'bg-brand-50' : 'hover:bg-gray-50'}`}
               >
-                <span className="flex-shrink-0 text-indigo-600">
+                <span className="flex-shrink-0 text-brand-600">
                   {suggestion.type === 'folder' ? <Folder size={18} /> : <FileIcon type={suggestion.item.mimeType} size={18} />}
                 </span>
                 <span className="ml-3 min-w-0">
@@ -175,7 +175,7 @@ const SearchBar = () => {
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={goToResults}
-            className="w-full px-4 py-2 mt-1 border-t border-gray-100 text-left text-sm font-medium text-indigo-600 hover:bg-gray-50"
+            className="w-full px-4 py-2 mt-1 border-t border-gray-100 text-left text-sm font-medium text-brand-600 hover:bg-gray-50"
           >
             {total > 0 ? `Voir tous les résultats (${total})` : 'Ouvrir la page de résultats'}
           </button>

@@ -44,14 +44,14 @@ const Navbar = () => {
   }, [showUserMenu]);
 
   return (
-    <nav className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 h-16">
+    <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200/70 fixed top-0 left-0 right-0 z-50 h-16">
       <div className="px-2 sm:px-4 lg:px-6 h-full">
         <div className="flex justify-between items-center h-full gap-2">
           {/* Bouton du menu latéral + logo */}
           <div className="flex items-center flex-shrink-0">
             <button
               onClick={() => dispatch(toggleSidebar())}
-              className="p-2 mr-1 sm:mr-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              className="p-2 mr-1 sm:mr-2 rounded-lg text-gray-600 hover:bg-brand-50 hover:text-brand-700 transition-colors"
               aria-label="Afficher ou masquer le menu"
             >
               <Menu className="h-6 w-6" />
@@ -80,7 +80,7 @@ const Navbar = () => {
               aria-label="Menu utilisateur"
               className="flex items-center space-x-2 p-1 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
+              <div className="h-8 w-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center ring-2 ring-white shadow-md shadow-brand-500/30">
                 <User className="h-5 w-5 text-white" />
               </div>
               <span className="hidden md:inline text-sm font-medium text-gray-700 max-w-[10rem] truncate">
@@ -90,7 +90,7 @@ const Navbar = () => {
 
             {/* Dropdown menu utilisateur */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+              <div className="absolute right-0 mt-2 w-52 origin-top-right animate-scale-in bg-white rounded-xl shadow-xl shadow-brand-900/10 border border-gray-100 py-2 z-50">
                 <button
                   onClick={handleSettings}
                   className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"

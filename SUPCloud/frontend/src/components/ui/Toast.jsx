@@ -2,7 +2,7 @@ import React from 'react';
 
 const Toast = ({ message, type = 'info', onClose }) => {
   const bgColor = {
-    info: 'bg-blue-500',
+    info: 'bg-brand-600',
     success: 'bg-green-500',
     error: 'bg-red-500',
     warning: 'bg-yellow-500',

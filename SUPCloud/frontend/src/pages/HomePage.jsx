@@ -55,12 +55,12 @@ const CATEGORY_META = {
 const StatCard = ({ icon: Icon, label, value, hint, onClick }) => (
   <button
     onClick={onClick}
-    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 text-left hover:shadow-md transition-shadow"
+    className="group bg-white rounded-2xl shadow-sm border border-gray-200/80 p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/10"
   >
     <div className="flex items-center justify-between mb-3">
       <span className="text-sm text-gray-500">{label}</span>
-      <div className="p-2 bg-indigo-50 rounded-lg">
-        <Icon size={20} className="text-indigo-600" />
+      <div className="p-2.5 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl shadow-md shadow-brand-500/30 transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-3">
+        <Icon size={20} className="text-white" />
       </div>
     </div>
     <p className="text-2xl font-bold text-gray-900">{value}</p>
@@ -74,7 +74,7 @@ const SectionHeader = ({ title, actionLabel, onAction }) => (
     {onAction && (
       <button
         onClick={onAction}
-        className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        className="flex items-center text-sm font-medium text-brand-600 hover:text-brand-700"
       >
         {actionLabel}
         <ArrowRight size={16} className="ml-1" />
@@ -88,7 +88,7 @@ const StorageBreakdown = ({ categories, storageUsed, storageLimit }) => {
   const totalSize = segments.reduce((sum, category) => sum + category.size, 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Répartition du stockage</h3>
         <span className="text-sm text-gray-500">
@@ -100,7 +100,7 @@ const StorageBreakdown = ({ categories, storageUsed, storageLimit }) => {
         {segments.map((category) => (
           <div
             key={category.key}
-            className={`${CATEGORY_META[category.key].bar} h-3`}
+            className={`${CATEGORY_META[category.key].bar} h-3 transition-all duration-700`}
             style={{ width: `${(category.size / totalSize) * 100}%` }}
             title={`${CATEGORY_META[category.key].label} : ${formatBytes(category.size)}`}
           />
@@ -187,22 +187,25 @@ const HomePage = () => {
 
   return (
     <MainLayout>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <div className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-600 px-6 py-8 sm:px-8 mb-8 text-white shadow-xl shadow-brand-900/20 flex flex-wrap items-center justify-between gap-6">
+        <div className="bg-grid absolute inset-0 -z-10 opacity-20" aria-hidden="true" />
+        <div className="absolute -right-16 -top-24 -z-10 h-72 w-72 animate-blob rounded-full bg-brand-500/40 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-24 left-1/3 -z-10 h-64 w-64 animate-blob rounded-full bg-sky-400/25 blur-3xl" style={{ animationDelay: '-6s' }} aria-hidden="true" />
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Bonjour, {firstName}</h2>
-          <p className="text-gray-600">Voici un aperçu de votre espace SUPCloud</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1">Bonjour, {firstName} 👋</h2>
+          <p className="text-brand-100">Voici un aperçu de votre espace SUPCloud</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => dispatch(openCreateFolderModal())}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-white/10 ring-1 ring-white/25 backdrop-blur rounded-xl hover:bg-white/20 transition-all hover:-translate-y-0.5"
           >
             <FolderPlus size={18} className="mr-2" />
             Nouveau dossier
           </button>
           <button
             onClick={() => dispatch(openUploadModal())}
-            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center px-4 py-2.5 text-sm font-semibold text-brand-700 bg-white rounded-xl shadow-lg shadow-brand-950/20 hover:bg-brand-50 transition-all hover:-translate-y-0.5"
           >
             <Upload size={18} className="mr-2" />
             Importer des fichiers
@@ -212,15 +215,15 @@ const HomePage = () => {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl mb-4 shadow-sm ring-1 ring-brand-100 animate-float">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
           </div>
           <p className="text-gray-600">Chargement...</p>
         </div>
       ) : isEmpty ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-16 px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-50 rounded-full mb-4">
-            <HardDrive className="h-8 w-8 text-indigo-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-50 rounded-full mb-4">
+            <HardDrive className="h-8 w-8 text-brand-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Votre espace est vide</h3>
           <p className="text-gray-600 mb-6">
@@ -228,7 +231,7 @@ const HomePage = () => {
           </p>
           <button
             onClick={() => dispatch(openUploadModal())}
-            className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors"
           >
             <Upload size={18} className="mr-2" />
             Importer des fichiers
@@ -237,7 +240,7 @@ const HomePage = () => {
       ) : (
         <div className="space-y-8">
           {/* Chiffres clés */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="stagger grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               icon={Files}
               label="Fichiers"
@@ -278,7 +281,7 @@ const HomePage = () => {
                 actionLabel="Voir les récents"
                 onAction={() => navigate('/recents')}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {files.map((file) => (
                   <FileCard key={file.id} file={file} />
                 ))}
@@ -294,7 +297,7 @@ const HomePage = () => {
                 actionLabel="Tous mes fichiers"
                 onAction={() => navigate('/files')}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {folders.map((folder) => (
                   <FolderCard key={folder.id} folder={folder} />
                 ))}
