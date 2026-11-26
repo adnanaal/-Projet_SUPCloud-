@@ -3,12 +3,11 @@ const AppError = require('../utils/AppError');
 const bcrypt = require('bcrypt');
 const toPublicUser = require('../utils/publicUser');
 const { generateLinkToken } = require('../config/jwt');
-const { PROVIDER_FIELDS } = require('../utils/oauthAccount');
+const { PROVIDER_FIELDS, isProviderConfigured } = require('../utils/oauthAccount');
 const { deletePhysicalFiles } = require('../utils/trash');
 
 const PROVIDER_LABELS = { google: 'Google', github: 'GitHub', microsoft: 'Microsoft' };
 
-const isMicrosoftConfigured = () => Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
 
 /**
  * Obtenir les informations de l'utilisateur connecté
@@ -152,8 +151,8 @@ const createOAuthLinkToken = async (req, res, next) => {
       throw new AppError(400, 'Fournisseur OAuth2 invalide (google, github ou microsoft requis)', 'ValidationError');
     }
 
-    if (provider === 'microsoft' && !isMicrosoftConfigured()) {
-      throw new AppError(400, "La connexion Microsoft n'est pas configurée sur ce serveur", 'ValidationError');
+    if (!isProviderConfigured(provider)) {
+      throw new AppError(400, `La connexion ${PROVIDER_LABELS[provider]} n'est pas configurée sur ce serveur`, 'ValidationError');
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });

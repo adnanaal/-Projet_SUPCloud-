@@ -4,7 +4,7 @@ const GitHubStrategy = require('passport-github2').Strategy;
 const OAuth2Strategy = require('passport-oauth2');
 const jwt = require('jsonwebtoken');
 const { verifyLinkToken } = require('./jwt');
-const { handleOAuthProfile } = require('../utils/oauthAccount');
+const { handleOAuthProfile, isProviderConfigured } = require('../utils/oauthAccount');
 
 /**
  * Détermine si la requête de retour du fournisseur est un rattachement (et non une connexion) :
@@ -24,93 +24,97 @@ const getLinkUserId = (req, provider) => {
   }
 };
 
-// Configuration de la stratégie Google OAuth2
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      passReqToCallback: true,
-    },
-    async (req, accessToken, refreshToken, profile, done) => {
-      try {
-        const linkUserId = getLinkUserId(req, 'google');
-        const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+// Configuration de la stratégie Google OAuth2 - uniquement si configurée
+if (isProviderConfigured('google')) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+        passReqToCallback: true,
+      },
+      async (req, accessToken, refreshToken, profile, done) => {
+        try {
+          const linkUserId = getLinkUserId(req, 'google');
+          const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
-        if (!email && !linkUserId) {
-          return done(new Error("Google n'a fourni aucune adresse email"), null);
+          if (!email && !linkUserId) {
+            return done(new Error("Google n'a fourni aucune adresse email"), null);
+          }
+
+          const result = await handleOAuthProfile(
+            'google',
+            {
+              providerId: profile.id,
+              email,
+              emailVerified: profile.emails[0].verified === true || profile.emails[0].verified === 'true',
+              name: profile.displayName || (profile.name && profile.name.givenName),
+              avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
+            },
+            linkUserId
+          );
+
+          return done(null, result);
+        } catch (error) {
+          return done(error, null);
         }
-
-        const result = await handleOAuthProfile(
-          'google',
-          {
-            providerId: profile.id,
-            email,
-            emailVerified: profile.emails[0].verified === true || profile.emails[0].verified === 'true',
-            name: profile.displayName || (profile.name && profile.name.givenName),
-            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
-          },
-          linkUserId
-        );
-
-        return done(null, result);
-      } catch (error) {
-        return done(error, null);
       }
-    }
-  )
-);
+    )
+  );
+}
 
-// Configuration de la stratégie GitHub OAuth2
-passport.use(
-  new GitHubStrategy(
-    {
-      clientID: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: process.env.GITHUB_CALLBACK_URL,
-      // Sans ce scope déclaré ici, la bibliothèque ne récupère pas /user/emails
-      // (indispensable quand l'email du compte GitHub est privé)
-      scope: ['user:email'],
-      // Garder tous les emails avec leurs indicateurs primary et verified
-      allRawEmails: true,
-      passReqToCallback: true,
-    },
-    async (req, accessToken, refreshToken, profile, done) => {
-      try {
-        const linkUserId = getLinkUserId(req, 'github');
+// Configuration de la stratégie GitHub OAuth2 - uniquement si configurée
+if (isProviderConfigured('github')) {
+  passport.use(
+    new GitHubStrategy(
+      {
+        clientID: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        callbackURL: process.env.GITHUB_CALLBACK_URL,
+        // Sans ce scope déclaré ici, la bibliothèque ne récupère pas /user/emails
+        // (indispensable quand l'email du compte GitHub est privé)
+        scope: ['user:email'],
+        // Garder tous les emails avec leurs indicateurs primary et verified
+        allRawEmails: true,
+        passReqToCallback: true,
+      },
+      async (req, accessToken, refreshToken, profile, done) => {
+        try {
+          const linkUserId = getLinkUserId(req, 'github');
 
-        // Email principal et vérifié en priorité (la liste renvoyée par GitHub n'est pas triée)
-        const emails = profile.emails || [];
-        const emailEntry =
-          emails.find((entry) => entry.primary && entry.verified) ||
-          emails.find((entry) => entry.verified) ||
-          emails[0];
-        const email = emailEntry && emailEntry.value;
+          // Email principal et vérifié en priorité (la liste renvoyée par GitHub n'est pas triée)
+          const emails = profile.emails || [];
+          const emailEntry =
+            emails.find((entry) => entry.primary && entry.verified) ||
+            emails.find((entry) => entry.verified) ||
+            emails[0];
+          const email = emailEntry && emailEntry.value;
 
-        if (!email && !linkUserId) {
-          return done(new Error("GitHub n'a fourni aucune adresse email (scope user:email requis)"), null);
+          if (!email && !linkUserId) {
+            return done(new Error("GitHub n'a fourni aucune adresse email (scope user:email requis)"), null);
+          }
+
+          const result = await handleOAuthProfile(
+            'github',
+            {
+              providerId: profile.id,
+              email,
+              emailVerified: Boolean(emailEntry && emailEntry.verified),
+              name: profile.displayName || profile.username,
+              avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
+            },
+            linkUserId
+          );
+
+          return done(null, result);
+        } catch (error) {
+          return done(error, null);
         }
-
-        const result = await handleOAuthProfile(
-          'github',
-          {
-            providerId: profile.id,
-            email,
-            emailVerified: Boolean(emailEntry && emailEntry.verified),
-            name: profile.displayName || profile.username,
-            avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : undefined,
-          },
-          linkUserId
-        );
-
-        return done(null, result);
-      } catch (error) {
-        return done(error, null);
       }
-    }
-  )
-);
+    )
+  );
+}
 
 // Annuaire des comptes Microsoft personnels : leur adresse est vérifiée par Microsoft
 const MICROSOFT_PERSONAL_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad';
@@ -125,7 +129,7 @@ const isMicrosoftEmailVerified = (claims) =>
 
 // Configuration de la stratégie Microsoft (Microsoft Entra ID, points d'accès v2.0 :
 // comptes professionnels, scolaires et personnels) - uniquement si configurée
-if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
+if (isProviderConfigured('microsoft')) {
   const tenant = process.env.MICROSOFT_TENANT_ID || 'common';
 
   const microsoftStrategy = new OAuth2Strategy(

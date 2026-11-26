@@ -22,6 +22,7 @@ const LoginPage = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('session') === 'expired') return 'Votre session a expiré. Veuillez vous reconnecter.';
     if (params.get('error') !== 'oauth') return '';
+    if (params.get('reason') === 'not_configured') return "Cette connexion n'est pas activée sur ce serveur. Utilisez votre email et votre mot de passe, ou un autre service.";
     return params.get('reason') === 'email_in_use'
       ? "Un compte SUPCloud existe déjà avec cette adresse email, mais elle n'a pas pu être confirmée auprès du service externe. Connectez-vous avec votre méthode habituelle, puis rattachez ce compte depuis Paramètres, section « Comptes connectés »."
       : 'La connexion avec le service externe a échoué ou a été annulée. Veuillez réessayer.';

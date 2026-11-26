@@ -8,6 +8,15 @@ const PROVIDER_FIELDS = {
   microsoft: 'microsoftId',
 };
 
+// Variables d'environnement qui activent chaque fournisseur : sans elles, il est simplement désactivé
+const PROVIDER_ENV = {
+  google: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
+  github: ['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'],
+  microsoft: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_CLIENT_SECRET'],
+};
+
+const isProviderConfigured = (provider) => (PROVIDER_ENV[provider] || []).every((name) => Boolean(process.env[name]));
+
 /**
  * Connexion : retrouver le compte par identifiant du fournisseur d'abord (compte déjà rattaché,
  * même avec une autre adresse email), puis par email (rattachement automatique), sinon le créer.
@@ -114,4 +123,4 @@ const handleOAuthProfile = async (provider, identity, linkUserId) => {
   return { user: result.user, token };
 };
 
-module.exports = { PROVIDER_FIELDS, handleOAuthProfile };
+module.exports = { PROVIDER_FIELDS, isProviderConfigured, handleOAuthProfile };

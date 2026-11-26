@@ -1,0 +1,17 @@
+# Configuration locale : l'adresse de l'API passe par l'argument de construction VITE_API_URL
+.env
+.env.*
+!.env.example
+
+# Réinstallés ou régénérés dans l'image
+node_modules
+dist
+*.log
+
+# Divers
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.DS_Store
+README.md

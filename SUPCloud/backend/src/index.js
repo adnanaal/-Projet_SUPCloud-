@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const passport = require('./config/passport');
+const prisma = require('./config/database');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -14,6 +15,7 @@ const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 const toPublicUser = require('./utils/publicUser');
 const { verifyLinkToken } = require('./config/jwt');
+const { isProviderConfigured } = require('./utils/oauthAccount');
 
 const app = express();
 
@@ -83,10 +85,9 @@ const OAUTH_PROVIDERS = {
   microsoft: { scope: ['openid', 'profile', 'email', 'User.Read'] },
 };
 
-// Microsoft est optionnel : sans identifiants configurés, on revient sur la page de connexion
-const microsoftEnabled = Boolean(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+// Chaque fournisseur est optionnel : sans identifiants configurés, on revient sur la page de connexion
 const requireProvider = (provider) => (req, res, next) =>
-  provider === 'microsoft' && !microsoftEnabled ? res.redirect(OAUTH_FAILURE_REDIRECT) : next();
+  isProviderConfigured(provider) ? next() : res.redirect(`${OAUTH_FAILURE_REDIRECT}&reason=not_configured`);
 
 // Retour dans les Paramètres après une tentative de rattachement (succès ou erreur)
 const settingsRedirect = (params) => `${FRONTEND_URL}/settings?${new URLSearchParams(params).toString()}`;
@@ -182,3 +183,11 @@ const server = app.listen(PORT, () => {
 
 // Les gros fichiers peuvent dépasser le délai par défaut de Node (5 minutes par requête)
 server.requestTimeout = 2 * 60 * 60 * 1000;
+
+// Arrêt propre (docker stop, Ctrl+C) : fin des requêtes en cours puis fermeture de la base
+const shutdown = (signal) => {
+  console.log(`${signal} reçu, arrêt du serveur...`);
+  setTimeout(() => process.exit(1), 10000).unref();
+  server.close(() => prisma.$disconnect().finally(() => process.exit(0)));
+};
+['SIGTERM', 'SIGINT'].forEach((signal) => process.on(signal, () => shutdown(signal)));

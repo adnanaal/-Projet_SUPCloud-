@@ -1,0 +1,7 @@
+# Fichiers exécutés dans les conteneurs Linux : fins de ligne LF obligatoires,
+# même après un clonage sous Windows (sinon « /bin/sh^M: bad interpreter »)
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerignore text eol=lf
+docker-compose*.yml text eol=lf
+nginx*.conf text eol=lf

@@ -1,0 +1,21 @@
+# Secrets et configuration locale : ne jamais copier dans une image
+.env
+.env.*
+!.env.example
+
+# Dépendances (réinstallées dans l'image) et fichiers générés
+node_modules
+npm-debug.log*
+*.log
+
+# Données utilisateur locales
+uploads
+
+# Divers
+tests
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.DS_Store
+README.md

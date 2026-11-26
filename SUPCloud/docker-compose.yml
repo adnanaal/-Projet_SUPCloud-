@@ -1,0 +1,93 @@
+# SUPCloud : lance toute l'application (base de données, backend, frontend) avec « docker compose up ».
+# Aucune configuration n'est nécessaire : les secrets sont générés au premier démarrage.
+# Réglages facultatifs (ports, connexion Google/GitHub/Microsoft...) : copier .env.example en .env.
+name: supcloud
+
+x-backend-build: &backend-build
+  context: ./backend
+
+services:
+  # Génère les secrets (clé des jetons JWT, mot de passe PostgreSQL) une seule fois, dans un volume
+  init-secrets:
+    build: *backend-build
+    image: supcloud-backend
+    entrypoint: ["node", "scripts/init-secrets.js"]
+    volumes:
+      - secrets:/data/secrets
+    restart: "no"
+
+  # Base de données : métadonnées (comptes, dossiers, fichiers, corbeille). Non publiée sur la machine hôte.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: supcloud
+      POSTGRES_DB: supcloud
+      POSTGRES_PASSWORD_FILE: /secrets/db_password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - secrets:/secrets:ro
+    depends_on:
+      init-secrets:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supcloud -d supcloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # API REST : applique les migrations de la base au démarrage
+  backend:
+    build: *backend-build
+    image: supcloud-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_USER: supcloud
+      DB_NAME: supcloud
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-5173}}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:${BACKEND_PORT:-3000}/auth/google/callback}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-http://localhost:${BACKEND_PORT:-3000}/auth/github/callback}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
+      MICROSOFT_CALLBACK_URL: ${MICROSOFT_CALLBACK_URL:-http://localhost:${BACKEND_PORT:-3000}/auth/microsoft/callback}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID:-common}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - uploads:/data/uploads
+      - secrets:/data/secrets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      init-secrets:
+        condition: service_completed_successfully
+
+  # Interface web : fichiers statiques servis par nginx
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Adresse de l'API vue par le navigateur (inscrite dans l'application à la construction)
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${BACKEND_PORT:-3000}}
+    image: supcloud-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# Données conservées entre les redémarrages (supprimées seulement par « docker compose down -v »)
+volumes:
+  db-data:
+  uploads:
+  secrets:

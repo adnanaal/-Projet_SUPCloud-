@@ -1,0 +1,4 @@
+# Réglages locaux de docker compose (identifiants OAuth2...) : jamais dans le dépôt
+.env
+.env.local
+!.env.example
